@@ -1,6 +1,6 @@
 {
   "name": "memtable",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "In memory key value store with pass through to persistent store",
   "main": "index.js",
   "scripts": {
