@@ -4,7 +4,7 @@ var Memtable = require('.')
 test('memtable',function(t){
   var table = null
   var resume = [
-    {id:'0',name:'a',other:'zero' },
+    {id:'0',name:'a',other:'zero',test:'a' },
     { id:'1',name:'b',other:'one' },
     { id:'2',name:'c',other:'two' }
   ]
@@ -13,6 +13,16 @@ test('memtable',function(t){
       resume:resume,
       unique:['name'],
       filterable:['other'],
+    })
+    t.ok(table)
+    t.end()
+  })
+  t.test('init2',function(t){
+    table = Memtable({
+      resume:resume,
+      unique:['name'],
+      filterable:['other'],
+      saveAll:true
     })
     t.ok(table)
     t.end()

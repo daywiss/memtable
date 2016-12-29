@@ -10,6 +10,7 @@ var Promise = require('bluebird')
 module.exports = function(props){
 
   var state = {}
+  var propsToKeep = []
 
   function getTable(index){
     assert(index,'requires table unique index')
@@ -37,16 +38,23 @@ module.exports = function(props){
     return getTable(props.primary)
   }
 
+  function strip(value){
+    return lodash.pick(value,propsToKeep)
+  }
+
   function set(value){
     assert(value,'requires value with id prop')
-    var toKeep = lodash.concat([props.primary],props.filterable,props.unique)
-    var stripped = lodash.pick(value,toKeep)
-    setBy(props.primary,stripped)
+    
+    var tosave = props.saveAll ? value : strip(value)
+
+    setBy(props.primary,tosave)
+
     lodash.each(props.unique,function(index){
       try{
-        setBy(index,stripped)
+        setBy(index,tosave)
       }catch(e){}
     })
+
     return value
   }
 
@@ -108,11 +116,13 @@ module.exports = function(props){
       unique:[],
       filterable:[],
       resume:[],
+      saveAll:false,
       preChange:function(x){return Promise.resolve(x)},
       onChange:function(x){return x},
       postChange:function(x){return Promise.resolve(x)},
       get:function(x){ return Promise.resolve(x)}
     })
+    propsToKeep = lodash.concat([props.primary],props.filterable,props.unique)
     state[props.primary] = {}
     lodash.each(props.unique,function(index){
       state[index] = {}

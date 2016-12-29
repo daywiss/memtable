@@ -94,6 +94,7 @@ table = Table(options)
     unique:[], //list indexable properties as strings
     filterable:[], //incomplete searchable properties as strings
     resume:[], //array of table objects to resume from
+    saveAll:false, //save entire object in memory rather than just primary/unique/filterable props. Only do if you know objects are small. 
     preChange:function(x){ return Promise.resolve(x)}, //this function will get called before memory is changed, and wait for promise to resolve or reject
     postChange:function(x){return Promise.resolve(x)}, //this function is called after preChange, before onChange, expects a promise to return data. The result will be passed to onChange.
     onChange:function(x){ return x}, //this function will get called after memory is changed, anything returned from it is ignored
