@@ -101,7 +101,7 @@ table = Table(options)
   }
 ``` 
 
-#Reading and Writing
+##Reading and Writing
 ```js
   //get single object
   table.get('primaryid').then(function(result){
@@ -109,7 +109,7 @@ table = Table(options)
   })
 
   //get list of objects
-  table.getAll(['primary0',primary1']).then(function(result){
+  table.getAll(['primary0','primary1']).then(function(result){
     //do something with array
   })
 
