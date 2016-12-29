@@ -1,0 +1,25 @@
+{
+  "name": "memtable",
+  "version": "0.0.1",
+  "description": "In memory key value store with pass through to persistent store",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test"
+  },
+  "homepage": "https://github.com/daywiss/memtable",
+  "bugs": {
+    "url" : "https://github.com/daywiss/memtable/issues"
+  },
+  "repository":{
+    "url":"https://github.com/daywiss/memtable"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.4.7",
+    "lodash": "^4.17.3"
+  },
+  "devDependencies": {
+    "tape": "^4.6.3"
+  }
+}
