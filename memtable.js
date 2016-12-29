@@ -34,6 +34,15 @@ module.exports = function(props){
     return result
   }
 
+  function hasBy(index,id){
+    try{
+      getBy(index,id) 
+      return true
+    }catch(e){
+      return false
+    }
+  }
+
   function primary(){
     return getTable(props.primary)
   }
@@ -87,6 +96,26 @@ module.exports = function(props){
     }))
   })
 
+  methods.has = Promise.method(function(id){
+    return hasBy(props.primary,id)
+  })
+
+  methods.hasBy = Promise.method(function(prop,id){
+    return hasBy(prop,id)
+  })
+
+  methods.hasAll = Promise.method(function(ids){
+    return Promise.all(lodash.map(ids,function(id){
+      return methods.has(id)
+    }))
+  })
+
+  methods.hasAllBy = Promise.method(function(prop,ids){
+    return Promise.all(lodash.map(ids,function(id){
+      return methods.hasBy(prop,id)
+    }))
+  })
+
   methods.set = Promise.method(function(value){
     return props.preChange(value).then(function(){
       return set(value)
@@ -97,6 +126,10 @@ module.exports = function(props){
     }).spread(function(result){
       return result
     })
+  })
+
+  methods.setAll = Promise.method(function(values){
+    return Promise.all(lodash.map(values,methods.set))
   })
 
   methods.filter = Promise.method(function(query,insensitive){

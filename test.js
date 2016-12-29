@@ -77,4 +77,39 @@ test('memtable',function(t){
       t.end()
     }).catch(t.end)
   })
+  t.test('setAll',function(t){
+    var list = [
+      {id:'3',name:'d',other:'three'},
+      {id:'4',name:'e',other:'four'},
+      {id:'5',name:'f',other:'five'}
+    ]
+    table.setAll(list).then(function(result){
+      t.equal(result.length,3)
+      t.end()
+    }).catch(t.end)
+  })
+  t.test('has',function(t){
+    table.has('4').then(function(result){
+      t.ok(result)
+      t.end()
+    }).catch(t.end)
+  })
+  t.test('hasBy',function(t){
+    table.hasBy('name','e').then(function(result){
+      t.ok(result)
+      t.end()
+    }).catch(t.end)
+  })
+  t.test('hasAll',function(t){
+    table.hasAll(['1','2','3']).then(function(result){
+      t.ok(result.length,3)
+      t.end()
+    }).catch(t.end)
+  })
+  t.test('hasAllBy',function(t){
+    table.hasAllBy('name',['a','c','e']).then(function(result){
+      t.ok(result.length,3)
+      t.end()
+    }).catch(t.end)
+  })
 })

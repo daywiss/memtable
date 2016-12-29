@@ -45,8 +45,12 @@ as an array.
   })
 
   //returns an array of users which partially matches any "filterable" properties
-  users.filter('email0',function(result){
-    //do something with results
+  users.filter('0',function(result){
+    //do something with results array
+  })
+
+  users.has('id0').then(function(result){
+    //result == true
   })
 
 
@@ -103,41 +107,83 @@ table = Table(options)
 ``` 
 
 ##Reading and Writing
+Gets and sets will throw errors if object or ids do not exist. Has will not throw, but return true or false.
+
 ```js
   //get single object
   table.get('primaryid').then(function(result){
     //do something with object
+  }).catch(function(err){
+    //object did not exist, or other error
   })
 
   //get list of objects
   table.getAll(['primary0','primary1']).then(function(result){
     //do something with array
-  })
+  }).catch(function(err){
+    //object did not exist, or other error
+  }) 
 
   //gets object by 'unique' indexed property
   table.getBy('uniquepropname','uniqueid').then(function(result){
     //do something with single object
-  })
+  }).catch(function(err){
+    //object did not exist, or other error
+  }) 
 
   //gets object by 'unique' indexed property
   table.getAllBy('uniquepropname',['uniqueid1','uniqueid2']).then(function(result){
     //do something with array
+  }).catch(function(err){
+    //object did not exist, or other error
+  }) 
+
+  //"has" will always return true or false, will not throw
+  table.has('primaryid').then(function(result){
+    //result is true if object with id "primaryid" exists 
+  })
+   
+  //check if object exists by secondary unique property, will not throw 
+  table.hasBy('uniquepropname','uniqueid').then(function(result){
+    //result is true if object with secondary id "secondaryid" exists 
+  })
+
+  //check if list of ids exist, will not throw
+  table.hasAll(listofids).then(function(result){
+    //result is array of true/false values
+  })
+
+  //check if list of unique secondary ids exist, will not throw
+  table.hasAllBy('uniquepropname',listofuniqueids).then(function(result){
+    //result is array of true/false values
   })
 
   //get entire table as array
   table.list().then(function(result){
-
-  })
+    //result is array of all objects in table
+  }).catch(function(err){
+    //object did not exist, or other error
+  }) 
 
   //partially searches all filterable properties
   table.filter('searchterm').then(function(result){
     //returns array of objects which partially match 
-  })
+  }).catch(function(err){
+    //some error
+  }) 
 
   //update memory with new object, replaces whatever was at that id
   table.set(myobject).then(function(result){
     //result is myobject
-  })
+  }).catch(function(err){
+    //some error
+  }) 
+
+  table.setAll(objectarray).then(function(result){
+    //results equals objectarray
+  }).catch(function(err){
+    //some error
+  }) 
 ```
 
 
