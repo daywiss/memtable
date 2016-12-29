@@ -2,7 +2,7 @@
 Basic operations on a database table, but in memory. Uses promises. 
 Allows data to pass through to persistent store and resuming from persisted data.  
 Only retains data from objects required for table operations to minimize
-memory footprint, such as unique indexes and filterable fields. 
+memory footprint, such as unique indexes and filterable fields.  
 
 #Install
 `npm install memtable`
@@ -15,7 +15,7 @@ millions of entries. Your backend store just needs to supply the ability to upse
 as an array. 
 
 #Usage
-``` 
+```js
   var Table = require('memtable')
 
   //all options optional
@@ -54,7 +54,7 @@ as an array.
 
 #Restore and Persist data
 
-``` 
+```js
    //assume we have a user model that uses promises to persist data to database
    var UserModel = require('./UserModel')
 
@@ -79,3 +79,66 @@ as an array.
    
 
 ``` 
+
+#API
+
+##Initialization Options
+```js
+var Table = require('memtable')
+table = Table(options)
+``` 
+```js
+  //default option values
+  options = {
+    primary:'id' //default primary key property 
+    unique:[], //list indexable properties as strings
+    filterable:[], //incomplete searchable properties as strings
+    resume:[], //array of table objects to resume from
+    preChange:function(x){ return Promise.resolve(x)}, //this function will get called before memory is changed, and wait for promise to resolve or reject
+    postChange:function(x){return Promise.resolve(x)}, //this function is called after preChange, before onChange, expects a promise to return data. The result will be passed to onChange.
+    onChange:function(x){ return x}, //this function will get called after memory is changed, anything returned from it is ignored
+    get:function(x){ return Promise.resolve(x)} //function to get the full data object from your persistent data store.
+  }
+``` 
+
+#Reading and Writing
+```js
+  //get single object
+  table.get('primaryid').then(function(result){
+    //do something with object
+  })
+
+  //get list of objects
+  table.getAll(['primary0',primary1']).then(function(result){
+    //do something with array
+  })
+
+  //gets object by 'unique' indexed property
+  table.getBy('uniquepropname','uniqueid').then(function(result){
+    //do something with single object
+  })
+
+  //gets object by 'unique' indexed property
+  table.getAllBy('uniquepropname',['uniqueid1','uniqueid2']).then(function(result){
+    //do something with array
+  })
+
+  //get entire table as array
+  table.list().then(function(result){
+
+  })
+
+  //partially searches all filterable properties
+  table.filter('searchterm').then(function(result){
+    //returns array of objects which partially match 
+  })
+
+  //update memory with new object, replaces whatever was at that id
+  table.set(myobject).then(function(result){
+    //result is myobject
+  })
+```
+
+
+
+

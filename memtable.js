@@ -84,10 +84,10 @@ module.exports = function(props){
       return set(value)
     }).then(function(){
       return props.postChange(value)
-    }).then(function(){
-      return props.onChange(value)
-    }).then(function(){
-      return value
+    }).then(function(result){
+      return [result,props.onChange(result)]
+    }).spread(function(result){
+      return result
     })
   })
 
