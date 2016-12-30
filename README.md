@@ -95,10 +95,7 @@ table = Table(options)
     resume:[], //array of table objects to resume from
     save:[], //properties on object to always store in memory, but not to index or filter on
     saveAll:false, //save entire object in memory rather than just primary/unique/filterable props. Only do if you know objects are small. 
-    preChange:function(x){ return Promise.resolve(x)}, //this function will get called before memory is changed, and wait for promise to resolve or reject
-    postChange:function(x){return Promise.resolve(x)}, //this function is called after preChange, before onChange, expects a promise to return data. The result will be passed to onChange.
     onChange:function(x){ return x}, //this function will get called after memory is changed, anything returned from it is ignored
-    get:function(x){ return Promise.resolve(x)} //function to get the full data object from your persistent data store.
   }
 ``` 
 
