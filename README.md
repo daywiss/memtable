@@ -64,7 +64,7 @@ restore table on start.
 
    //assume we can get the entire table as an array this way
    UserModel.getAll().then(function(users){
-     var users = Table({
+     var Users = Table({
        //resume previously persisted users
        resume:users,
        //set memtable to only retain 'id' field (default primary key) and 'email' field
@@ -73,7 +73,7 @@ restore table on start.
        onChange:handleChange
      })
 
-     //...do stuff with users table
+     //...do stuff with Users table
    })
    
 
