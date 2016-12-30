@@ -28,54 +28,46 @@ test('memtable',function(t){
     t.end()
   })
   t.test('list',function(t){
-    table.list().then(function(result){
-      t.deepEqual(resume,result)
-      t.end()
-    }).catch(t.end)
+    var result = table.list()
+    t.deepEqual(resume,result)
+    t.end()
   })
   t.test('get',function(t){
-    table.get('0').then(function(result){
-      t.deepEqual(result,resume[0])
-      t.end()
-    }).catch(t.end)
+    var result = table.get('0')
+    t.deepEqual(result,resume[0])
+    t.end()
   })
   t.test('getAll',function(t){
-    table.getAll(['0','1']).then(function(result){
-      t.equals(result.length,2)
-      t.end()
-    }).catch(t.end)
+    var result = table.getAll(['0','1'])
+    t.equals(result.length,2)
+    t.end()
   })
   t.test('getBy',function(t){
-    table.getBy('name','b').then(function(result){
-      t.deepEqual(result,resume[1])
-      t.end()
-    }).catch(t.end)
+    var result = table.getBy('name','b')
+    t.deepEqual(result,resume[1])
+    t.end()
   })
   t.test('getAllBy name',function(t){
-    table.getAllBy('name',['b','c']).then(function(result){
-      t.equals(result.length,2)
-      t.end()
-    }).catch(t.end)
+    var result = table.getAllBy('name',['b','c'])
+    t.equals(result.length,2)
+    t.end()
   })
   t.test('filter',function(t){
-    table.filter('ro').then(function(result){
-      t.ok(result.length)
-      t.deepEqual(result[0],resume[0])
-      t.end()
-    }).catch(t.end)
+    var result = table.filter('ro')
+    t.ok(result.length)
+    t.deepEqual(result[0],resume[0])
+    t.end()
   })
   t.test('filter insensitive',function(t){
-    table.filter('Wo',true).then(function(result){
-      t.ok(result.length)
-      t.deepEqual(result[0],resume[2])
-      t.end()
-    }).catch(t.end)
+    var result = table.filter('Wo',true)
+    t.ok(result.length)
+    t.deepEqual(result[0],resume[2])
+    t.end()
   })
   t.test('set',function(t){
-    table.set({id:'3',name:'d',other:'three'}).then(function(result){
-      t.ok(result)
-      t.end()
-    }).catch(t.end)
+    var result = table.set({id:'3',name:'d',other:'three'})
+    t.ok(result)
+    t.end()
   })
   t.test('setAll',function(t){
     var list = [
@@ -83,33 +75,28 @@ test('memtable',function(t){
       {id:'4',name:'e',other:'four'},
       {id:'5',name:'f',other:'five'}
     ]
-    table.setAll(list).then(function(result){
-      t.equal(result.length,3)
-      t.end()
-    }).catch(t.end)
+    var result = table.setAll(list)
+    t.equal(result.length,3)
+    t.end()
   })
   t.test('has',function(t){
-    table.has('4').then(function(result){
-      t.ok(result)
-      t.end()
-    }).catch(t.end)
+    var result = table.has('4')
+    t.ok(result)
+    t.end()
   })
   t.test('hasBy',function(t){
-    table.hasBy('name','e').then(function(result){
-      t.ok(result)
-      t.end()
-    }).catch(t.end)
+    var result = table.hasBy('name','e')
+    t.ok(result)
+    t.end()
   })
   t.test('hasAll',function(t){
-    table.hasAll(['1','2','3']).then(function(result){
-      t.ok(result.length,3)
-      t.end()
-    }).catch(t.end)
+    var result = table.hasAll(['1','2','3'])
+    t.ok(result.length,3)
+    t.end()
   })
   t.test('hasAllBy',function(t){
-    table.hasAllBy('name',['a','c','e']).then(function(result){
-      t.ok(result.length,3)
-      t.end()
-    }).catch(t.end)
+    var result = table.hasAllBy('name',['a','c','e'])
+    t.ok(result.length,3)
+    t.end()
   })
 })
