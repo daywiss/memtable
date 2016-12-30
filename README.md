@@ -1,18 +1,16 @@
 #MemTable
-Basic operations on a database table, but in memory. Uses promises. 
-Allows data to pass through to persistent store and resuming from persisted data.  
-Only retains data from objects required for table operations to minimize
-memory footprint, such as unique indexes and filterable fields.  
+Basic operations on a database table, but in memory, all syncronous calls. 
+Only retains data from objects required for table operations to minimize memory footprint, 
+such as unique indexes and filterable fields. Use in conjunction with a permanent data store. 
 
 #Install
 `npm install memtable`
 
 #Why
 Allows you to cache data in a way to be essentially database agnostic and still have useful queries
-all done in memory while staying consistent with your persistent datastore.
-As long as you are not dealing with big data, memory is a perfectly fine store for
-millions of entries. Your backend store just needs to supply the ability to upsert and get all values
-as an array. 
+all done in memory.  As long as you are not dealing with big data, memory is a perfectly fine store for
+millions of entries. Your backend store just needs to supply the ability to upsert on change event, and 
+restore table on start.
 
 #Usage
 ```js
@@ -23,6 +21,8 @@ as an array.
     primary:'id', //primary index, defaults to id, must be unique
     unique:['login','email'], //unique secondary ids
     filterable:['name','email','login'], //non unique properties which can be searched
+    save:[] //specify any data you want saved in memory
+    saveAll:false, //save all props in memory, for known small data objects
     resume:[], //an array of data to initialize table with
   })
 
@@ -32,27 +32,20 @@ as an array.
     name:'name0',
     email:'email0',
     login:'login0',
+    created:Date.now(), //this property will be stripped out, make sure its persisted somewhere else
   })
 
-  //get returns promise, though query is done in memory
-  users.get('id0').then(function(user){
-    //do something with user
-  })
+  //returns user, but a version of the user missing unnecessary props
+  var user = users.get('id0')
 
-  //returns a single user which does a full match on the query for that "unique" id
-  users.getBy('login','login0').then(function(user){
-    //do something with user
-  })
+  //query table by "login" property and return a single result
+  user = users.getBy('login','login0')
 
   //returns an array of users which partially matches any "filterable" properties
-  users.filter('0',function(result){
-    //do something with results array
-  })
+  var result = users.filter('0')
 
-  users.has('id0').then(function(result){
-    //result == true
-  })
-
+  //returns true, since primary id exists in table
+  var exists = users.has('id0')
 
 ``` 
 
@@ -62,23 +55,25 @@ as an array.
    //assume we have a user model that uses promises to persist data to database
    var UserModel = require('./UserModel')
 
-   function upsert(data){
-     //upserts data, returns the data in a promise
-     return UserModel.upsert(data)
+   //keep store eventually consistent with memory model
+   //for better consistency, persist data asyncronously, then update memtable on success.
+   function handleChange(data){
+     //upserts data into persistence model
+     UserModel.upsert(data)
    }
 
    //assume we can get the entire table as an array this way
    UserModel.getAll().then(function(users){
      var users = Table({
-       //preChange fires every time set is called, allows you to allow or deny data before memory is updated
-       preChange:upsert,
        //resume previously persisted users
        resume:users,
        //set memtable to only retain 'id' field (default primary key) and 'email' field
        unique:['email'],
+       //the table will call this every time memory is changed, it will ignore any return value.
+       onChange:handleChange
      })
 
-     //use the users table
+     //...do stuff with users table
    })
    
 
@@ -98,6 +93,7 @@ table = Table(options)
     unique:[], //list indexable properties as strings
     filterable:[], //incomplete searchable properties as strings
     resume:[], //array of table objects to resume from
+    save:[], //properties on object to always store in memory, but not to index or filter on
     saveAll:false, //save entire object in memory rather than just primary/unique/filterable props. Only do if you know objects are small. 
     preChange:function(x){ return Promise.resolve(x)}, //this function will get called before memory is changed, and wait for promise to resolve or reject
     postChange:function(x){return Promise.resolve(x)}, //this function is called after preChange, before onChange, expects a promise to return data. The result will be passed to onChange.
@@ -110,80 +106,80 @@ table = Table(options)
 Gets and sets will throw errors if object or ids do not exist. Has will not throw, but return true or false.
 
 ```js
-  //get single object
-  table.get('primaryid').then(function(result){
-    //do something with object
-  }).catch(function(err){
-    //object did not exist, or other error
-  })
+  try{
+    //get single object
+    var result = table.get('primaryid')
+  }catch(e){
+    //object did not exist
+  }
 
-  //get list of objects
-  table.getAll(['primary0','primary1']).then(function(result){
-    //do something with array
-  }).catch(function(err){
-    //object did not exist, or other error
-  }) 
+  try{
+    //get list of objects
+    var result = table.getAll(['primary0','primary1'])
+  }catch(e){
+    //object did not exist
+  }
 
-  //gets object by 'unique' indexed property
-  table.getBy('uniquepropname','uniqueid').then(function(result){
-    //do something with single object
-  }).catch(function(err){
-    //object did not exist, or other error
-  }) 
+  try{
+    //gets object by 'unique' indexed property
+    var result = table.getBy('uniquepropname','uniqueid')
+  }catch(e){
+    //object did not exist
+  }
 
-  //gets object by 'unique' indexed property
-  table.getAllBy('uniquepropname',['uniqueid1','uniqueid2']).then(function(result){
-    //do something with array
-  }).catch(function(err){
-    //object did not exist, or other error
-  }) 
+  try{
+    //gets object by 'unique' indexed property and returns array
+    var result = table.getAllBy('uniquepropname',['uniqueid1','uniqueid2'])
+  }catch(e){
+    //object did not exist
+  }
 
   //"has" will always return true or false, will not throw
-  table.has('primaryid').then(function(result){
-    //result is true if object with id "primaryid" exists 
-  })
+  //result is true if object with id "primaryid" exists 
+  var result = table.has('primaryid')
    
   //check if object exists by secondary unique property, will not throw 
-  table.hasBy('uniquepropname','uniqueid').then(function(result){
-    //result is true if object with secondary id "secondaryid" exists 
-  })
+  //result is true if object with secondary id "secondaryid" exists 
+  var result = table.hasBy('uniquepropname','uniqueid')
 
   //check if list of ids exist, will not throw
-  table.hasAll(listofids).then(function(result){
-    //result is array of true/false values
-  })
+  //result is array of true/false values
+  var result = table.hasAll(listofids)
 
   //check if list of unique secondary ids exist, will not throw
-  table.hasAllBy('uniquepropname',listofuniqueids).then(function(result){
-    //result is array of true/false values
-  })
+  //result is array of true/false values
+  var result = table.hasAllBy('uniquepropname',listofuniqueids)
 
-  //get entire table as array
-  table.list().then(function(result){
+  try{
+    //get entire table as array
     //result is array of all objects in table
-  }).catch(function(err){
-    //object did not exist, or other error
-  }) 
+    var result = table.list()
+  }catch(e){
+    //some fatal error, should not throw
+  }
 
-  //partially searches all filterable properties
-  table.filter('searchterm').then(function(result){
+  try{
+    //partially searches all filterable properties
     //returns array of objects which partially match 
-  }).catch(function(err){
-    //some error
-  }) 
+    var result = table.filter('searchterm')
+  }catch(e){
+    //some fatal error, should not throw
+  }
 
-  //update memory with new object, replaces whatever was at that id
-  table.set(myobject).then(function(result){
+  try{
+    //update memory with new object, replaces whatever was at that id
     //result is myobject
-  }).catch(function(err){
-    //some error
-  }) 
+    var result = table.set(myobject).then(function(result){
+  }catch(e){
+    //primary property not set
+  }
 
-  table.setAll(objectarray).then(function(result){
+  try{
     //results equals objectarray
-  }).catch(function(err){
-    //some error
-  }) 
+    var result = table.setAll(objectarray)
+  }catch(e){
+    //primary property not set
+  }
 ```
 
 
