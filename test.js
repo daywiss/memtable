@@ -1,18 +1,20 @@
 var test = require('tape')
 var Memtable = require('.')
+var lodash = require('lodash')
 
 test('memtable',function(t){
   var table = null
   var resume = [
-    {id:'0',name:'a',other:'zero',test:'a' },
-    { id:'1',name:'b',other:'one' },
-    { id:'2',name:'c',other:'two' }
+    {id:0,name:'a',other:'zero',test:'aa' },
+    { id:'1',name:'b',other:'one',test:'b' },
+    { id:'2',name:'c',other:'two',test:'c'  }
   ]
   t.test('init',function(t){
     table = Memtable({
       resume:resume,
-      unique:['name'],
+      secondary:['name'],
       filterable:['other'],
+      composite:[['other','test']],
     })
     t.ok(table)
     t.end()
@@ -20,8 +22,9 @@ test('memtable',function(t){
   t.test('init2',function(t){
     table = Memtable({
       resume:resume,
-      unique:['name'],
+      secondary:['name'],
       filterable:['other'],
+      composite:[['other','test']],
       saveAll:true
     })
     t.ok(table)
@@ -47,6 +50,11 @@ test('memtable',function(t){
     t.deepEqual(result,resume[1])
     t.end()
   })
+  t.test('getBy composite',function(t){
+    var result = table.getBy(['other','test'],['one','b'])
+    t.deepEqual(result,resume[1])
+    t.end()
+  })
   t.test('getAllBy name',function(t){
     var result = table.getAllBy('name',['b','c'])
     t.equals(result.length,2)
@@ -62,6 +70,11 @@ test('memtable',function(t){
     var result = table.filter('Wo',true)
     t.ok(result.length)
     t.deepEqual(result[0],resume[2])
+    t.end()
+  })
+  t.test('filter by test',function(t){
+    var result = table.filterBy('test','a')
+    t.ok(result.length)
     t.end()
   })
   t.test('set',function(t){
@@ -97,6 +110,28 @@ test('memtable',function(t){
   t.test('hasAllBy',function(t){
     var result = table.hasAllBy('name',['a','c','e'])
     t.ok(result.length,3)
+    t.end()
+  })
+  t.test('list',function(t){
+    var result = table.list()
+    t.ok(result.length)
+    t.end()
+  })
+  t.test('remove',function(t){
+    var result = table.remove(0)
+    t.ok(result)
+    t.end()
+  })
+  t.test('remove all',function(t){
+    var result = table.removeAll(['1','2'])
+    t.ok(result.length)
+    t.end()
+  })
+  t.test('drop',function(t){
+    var result = table.drop()
+    lodash.each(table.state(),function(value){
+      t.deepEqual(value,{})
+    })
     t.end()
   })
 })

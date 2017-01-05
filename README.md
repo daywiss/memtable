@@ -24,10 +24,12 @@ restore table on start.
     save:[] //specify any data you want saved in memory
     saveAll:false, //save all props in memory, for known small data objects
     resume:[], //an array of data to initialize table with
+    onChange:function(x){ return x}, //a function which gets called when any data gets set
+    onRemove:function(x){ return x}, //a function which gets called when any data gets removed
   })
 
-  //set returns a promise since it passes data through to async database
-  users.set({
+  //sets user data in table 
+  var user = users.set({
     id:'id0',
     name:'name0',
     email:'email0',
@@ -90,47 +92,56 @@ table = Table(options)
   //default option values
   options = {
     primary:'id' //default primary key property 
-    unique:[], //list indexable properties as strings
+    secondary:[], //list secondary indexable properties as strings, must be unique
+    composite:[[]], list of arrays of composite indexes composed of 2 or more properties
     filterable:[], //incomplete searchable properties as strings
+    required:[], //list of required properties. will throw error if object is set without one.
     resume:[], //array of table objects to resume from
     save:[], //properties on object to always store in memory, but not to index or filter on
     saveAll:false, //save entire object in memory rather than just primary/unique/filterable props. Only do if you know objects are small. 
-    onChange:function(x){ return x}, //this function will get called after memory is changed, anything returned from it is ignored
+    onChange:function(x){ return x}, //this function will get called after memory is set
+    onRemove:function(x){ return x}, //this function will get called after memory is deleted
   }
 ``` 
-
-##Reading and Writing
-Gets and sets will throw errors if object or ids do not exist. Has will not throw, but return true or false.
+##Set
+Save object to table, will trigger onChange callback. Will throw if required properties are not set.
 
 ```js
-  try{
-    //get single object
-    var result = table.get('primaryid')
-  }catch(e){
-    //object did not exist
-  }
+  //add a single object, returns the object back. Throws if required properties are not defined.
+  var result = table.set(object)
 
-  try{
-    //get list of objects
-    var result = table.getAll(['primary0','primary1'])
-  }catch(e){
-    //object did not exist
-  }
+  //add an array of objects, returns the list of objects back
+  var result = table.setAll(objects)
+```
 
-  try{
-    //gets object by 'unique' indexed property
-    var result = table.getBy('uniquepropname','uniqueid')
-  }catch(e){
-    //object did not exist
-  }
+##Get
+Get an object from table. Will throw if object does not exist.
+```js
+  //get object by primary id, returns the stored object. 
+  var result = table.get(primaryid)
 
-  try{
-    //gets object by 'unique' indexed property and returns array
-    var result = table.getAllBy('uniquepropname',['uniqueid1','uniqueid2'])
-  }catch(e){
-    //object did not exist
-  }
+  //get objects by a list of primary ids
+  var result = table.getAll(primaryids)
 
+  //get an object by secondary id, returns stored object.
+  var result = table.getBy(property,secondaryid)
+
+  //get objects by a list of secondary ids
+  var result = table.getAllBy(property,secondaryids)
+
+  //get object by composite id. Must specify composite id as an array of values
+  //Must specify the values to search as an array in the same order as the ids
+  var result = table.getBy(['prop1','prop2'],['compositevalue1','compositevalue2'])
+
+  //get a list of objects by composit ids. specify array of composite values.
+  var result = table.getAllBy(['prop1','prop2'],[['compositevalue1','compositevalue2']])
+
+```
+
+##Has
+Check if an object exists in the table. Will never throw. returns only true or false for each object checked.
+
+```js
   //"has" will always return true or false, will not throw
   //result is true if object with id "primaryid" exists 
   var result = table.has('primaryid')
@@ -147,38 +158,65 @@ Gets and sets will throw errors if object or ids do not exist. Has will not thro
   //result is array of true/false values
   var result = table.hasAllBy('uniquepropname',listofuniqueids)
 
-  try{
-    //get entire table as array
-    //result is array of all objects in table
-    var result = table.list()
-  }catch(e){
-    //some fatal error, should not throw
-  }
+  //check if object exists by composite id
+  var result = table.hasBy(['prop1','prop2'],['objectprop1','objectprop2'])
 
-  try{
-    //partially searches all filterable properties
-    //returns array of objects which partially match 
-    var result = table.filter('searchterm')
-  }catch(e){
-    //some fatal error, should not throw
-  }
-
-  try{
-    //update memory with new object, replaces whatever was at that id
-    //result is myobject
-    var result = table.set(myobject).then(function(result){
-  }catch(e){
-    //primary property not set
-  }
-
-  try{
-    //results equals objectarray
-    var result = table.setAll(objectarray)
-  }catch(e){
-    //primary property not set
-  }
+  //check if a list of objects exist by composite ids
+  var result = table.hasAllBy(['prop1','prop2'],[['objectprop1','objectprop2']])
 ```
 
+##Remove
+Remove an object from memory and trigger onRemove callback. Throws if object does not exist. Each remove returns the object removed.
+
+```js
+  //remove object by primary id
+  var result = table.remove(primaryid)
+
+  //remove objects by list of primary ids
+  var result = table.removeAll(primaryids)
+
+  //remove object by secondary id
+  var result = table.removeBy(property,secondaryid)
+
+  //remove objects by list of secondaryids
+  var result = table.removeAllBy(property,secondaryids)
+
+  //remove object by composite id. Must specify composite id as an array of values
+  var result = table.removeBy(['prop1','prop2'],['compositevalue1','compositevalue2'])
+
+  //remove objects by composite ids. specify array of array of composite values.
+  var result = table.getAllBy(['prop1','prop2'],[['compositevalue1','compositevalue2']])
+```
+
+#Filter
+Partially search a list of filterable properties on objects in the table. Returns a list of objects which matched, or an empty list.
+
+```js
+  //searches table for objects which match search term on filterable properties only
+  var result = table.filter('searchterm')
+
+  //searches table for objects which match search term for specified property only
+  var result = table.filterBy(property,'searchterm')
+```
+
+#Drop
+Clear the table. Does not return anything
+```js
+  table.drop()
+```
+
+#List
+Get an array of all objects in the table.
+```js
+  var result = table.list()
+```
+
+#State
+Get the entire table state as an object. Will include all secondary and composite indexes.
+```js
+  //returns an object which represents the table in memory
+  var result = table.state()
+```
 
 
 
