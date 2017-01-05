@@ -188,7 +188,7 @@ Remove an object from memory and trigger onRemove callback. Throws if object doe
   var result = table.getAllBy(['prop1','prop2'],[['compositevalue1','compositevalue2']])
 ```
 
-#Filter
+##Filter
 Partially search a list of filterable properties on objects in the table. Returns a list of objects which matched, or an empty list.
 
 ```js
@@ -199,19 +199,19 @@ Partially search a list of filterable properties on objects in the table. Return
   var result = table.filterBy(property,'searchterm')
 ```
 
-#Drop
+##Drop
 Clear the table. Does not return anything
 ```js
   table.drop()
 ```
 
-#List
+##List
 Get an array of all objects in the table.
 ```js
   var result = table.list()
 ```
 
-#State
+##State
 Get the entire table state as an object. Will include all secondary and composite indexes.
 ```js
   //returns an object which represents the table in memory
