@@ -9,23 +9,29 @@ module.exports = function(props){
 
   var state = {}
   var propsToKeep = []
+  var propsRequired = []
 
   function getTable(index){
     assert(index === 0 || index,'requires table index')
-    if(lodash.isArray(index)){
-      index = lodash.join(index,props.delimiter)
-    }
+    index = makeKey(index)
     var table = state[index]
     assert(table,'unable to find table with index ' + index)
     return table
   }
 
+  function makeKey(keys){
+    if(lodash.isArray(keys)){
+      return lodash.join(keys,props.delimiter)
+    }
+    return keys
+  }
+
   function compositeIndex(composite,value){
-    assert(lodash.every(composite,function(prop){ return lodash.has(value,prop) }),'Object Missing composite properties: ' + composite.join(props.delimiter))
-    return lodash.reduce(composite,function(result,prop){
+    assert(lodash.every(composite,function(prop){ return lodash.has(value,prop) }),'Object Missing composite properties: ' + makeKey(composite))
+    return makeKey(lodash.reduce(composite,function(result,prop){
       result.push(lodash.get(value,prop))
       return result
-    },[]).join(props.delimiter)
+    },[]))
   }
 
   function setBy(index,value){
@@ -42,9 +48,7 @@ module.exports = function(props){
   function getBy(index,id){
     assert(id === 0 || id,'requires secondary id')
     var table = getTable(index)
-    if(lodash.isArray(id)){
-      id = lodash.join(id,props.delimiter)
-    }
+    id = makeKey(id)
     var result = table[id]
     assert(result,'unable to find id: ' + id + ' on index: ' + index)
     return result
@@ -99,8 +103,8 @@ module.exports = function(props){
 
     var tosave = props.saveAll ? value : strip(value)
 
-    lodash.each(props.required,function(prop){
-      assert(tosave[prop],'required property ' + prop + ' not found')
+    lodash.each(propsRequired,function(prop){
+      assert(lodash.has(tosave,prop),'required property ' + prop + ' not found')
     })
 
     setBy(props.primary,tosave)
@@ -192,22 +196,31 @@ module.exports = function(props){
     return lodash.map(values,methods.set)
   }
 
-  methods.filter = function(query,insensitive){
+  methods.search = function(query,insensitive){
     query = insensitive ? lodash.toUpper(query) : query
     return lodash.filter(primary(),function(value,key){
-      return isMatch(value,query,props.filterable,insensitive)
+      return isMatch(value,query,props.searchable,insensitive)
     })
   }
 
-  methods.filterBy = function(prop,query,insensitive){
-    query = insensitive ? lodash.toUpper(query) : query
-    return lodash.filter(primary(),function(value,key){
-      return isMatch(value,query,[prop],insensitive)
-    })
+  methods.filter = function(filter){
+    return lodash.filter(primary(),filter)
+  }
+
+  methods.reduce = function(reduce,start){
+    return lodash.reduce(primary(),reduce,start)
+  }
+
+  methods.map = function(map){
+    return lodash.map(primary(),map)
+  }
+
+  methods.each = function(each){
+    return lodash.each(primary(),each)
   }
 
   methods.list = function(){
-    return lodash.values(state[props.primary])
+    return lodash.values(primary())
   }
 
   methods.removeBy = function(prop,id){
@@ -215,7 +228,6 @@ module.exports = function(props){
     props.onRemove(value)
     return value
   }
-
 
   methods.remove = function(id){
     return methods.removeBy(props.primary,id)
@@ -245,8 +257,7 @@ module.exports = function(props){
     props = lodash.defaults(p,{
       primary:'id',
       secondary:[],
-      composite:[],
-      filterable:[],
+      searchable:[],
       required:[],
       save:[],
       resume:[],
@@ -255,22 +266,25 @@ module.exports = function(props){
       onChange:function(x){return x},
       onRemove:function(x){return x},
     })
+
     propsToKeep = lodash.concat(
-        [props.primary],
-        props.filterable,
+        lodash.flatten([props.primary]),
+        props.searchable,
         props.secondary,
         props.save,
-        props.required,
-        lodash.flatten(props.composite)
+        props.required
     )
-    state[props.primary] = {}
-    lodash.each(props.secondary,function(index){
-      state[index] = {}
-    })
 
-    lodash.each(props.composite,function(composite){
-      assert(lodash.isArray(composite),'composite props require an array of prop name strings')
-      state[lodash.join(composite,props.delimiter)] = {}
+    propsRequired = lodash.concat(
+        props.required,
+        lodash.flatten([props.primary])
+    )
+
+    state[makeKey(props.primary)] = {}
+
+    lodash.each(props.secondary,function(index){
+      index = makeKey(index)
+      state[index] = {}
     })
 
     lodash.each(props.resume,set)

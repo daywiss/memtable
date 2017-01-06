@@ -20,7 +20,7 @@ restore table on start.
   var users = Table({
     primary:'id', //primary index, defaults to id, must be unique
     unique:['login','email'], //unique secondary ids
-    filterable:['name','email','login'], //non unique properties which can be searched
+    searchable:['name','email','login'], //non unique properties which can be searched
     save:[] //specify any data you want saved in memory
     saveAll:false, //save all props in memory, for known small data objects
     resume:[], //an array of data to initialize table with
@@ -93,8 +93,7 @@ table = Table(options)
   options = {
     primary:'id' //default primary key property 
     secondary:[], //list secondary indexable properties as strings, must be unique
-    composite:[[]], list of arrays of composite indexes composed of 2 or more properties
-    filterable:[], //incomplete searchable properties as strings
+    searchable:[], //properties which can be partially searched
     required:[], //list of required properties. will throw error if object is set without one.
     resume:[], //array of table objects to resume from
     save:[], //properties on object to always store in memory, but not to index or filter on
@@ -185,18 +184,40 @@ Remove an object from memory and trigger onRemove callback. Throws if object doe
   var result = table.removeBy(['prop1','prop2'],['compositevalue1','compositevalue2'])
 
   //remove objects by composite ids. specify array of array of composite values.
-  var result = table.getAllBy(['prop1','prop2'],[['compositevalue1','compositevalue2']])
+  var result = table.removeAllBy(['prop1','prop2'],[['compositevalue1','compositevalue2']])
 ```
 
-##Filter
-Partially search a list of filterable properties on objects in the table. Returns a list of objects which matched, or an empty list.
+##Map, Filter, Reduce, Each
+Internally uses (lodash's)[ www.lodash.com] "map", "filter", "reduce" and "each" functions over the entire table.  You can accomplish the same thing
+with "list" getting all the data as an array, but this saves you an iteration over the table.
 
 ```js
-  //searches table for objects which match search term on filterable properties only
-  var result = table.filter('searchterm')
+  //filter over all items in table, returns an array of items which filter returned true for
+  //see lodash filter
+  var result = table.filter(function(item){
+    //returns a list of items who pass this check
+    return item.name == 'some name'
+  })
 
-  //searches table for objects which match search term for specified property only
-  var result = table.filterBy(property,'searchterm')
+  //map over all items in table, returns an array of mapped values
+  //see lodash map
+  var result = table.map(function(item){ 
+    //returns just the ids in an array
+    return item.id
+  })
+
+  //reduce over all items in table, with optional second paramter to seed the reduce
+  //see lodash reduce
+  var result = table.reduce(function(result,item){
+    //sums all item.amount values, starting at 0.
+    return result + item.amount
+  },0)
+
+  //iterate over all items in table, for side effects.
+  // see lodash each
+  table.each(function(item){
+  })
+
 ```
 
 ##Drop
