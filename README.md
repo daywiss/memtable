@@ -91,7 +91,7 @@ table = Table(options)
 ```js
   //default option values
   options = {
-    primary:'id' //default primary key property 
+    primary:'id' //default primary key property, objects must at least have this property defined
     secondary:[], //list secondary indexable properties as strings, must be unique
     searchable:[], //properties which can be partially searched
     required:[], //list of required properties. will throw error if object is set without one.
@@ -187,9 +187,9 @@ Remove an object from memory and trigger onRemove callback. Throws if object doe
   var result = table.removeAllBy(['prop1','prop2'],[['compositevalue1','compositevalue2']])
 ```
 
-##Map, Filter, Reduce, Each
-Internally uses (lodash's)[ www.lodash.com] "map", "filter", "reduce" and "each" functions over the entire table.  You can accomplish the same thing
-with "list" getting all the data as an array, but this saves you an iteration over the table.
+##Map, Filter, Reduce, Each, Sort
+Internally uses [lodash's]( www.lodash.com) "map", "filter", "reduce" and "each" functions over the entire table.  You can accomplish the same thing
+with "list" getting all the data as an array, but this saves you an iteration over the table. Order of iteration is not gauranteed.
 
 ```js
   //filter over all items in table, returns an array of items which filter returned true for
@@ -216,7 +216,13 @@ with "list" getting all the data as an array, but this saves you an iteration ov
   //iterate over all items in table, for side effects.
   // see lodash each
   table.each(function(item){
+    //do something with item
   })
+
+  //returns sorted array where you specify the properties to sort by
+  //specify 'asc' or 'desc' to change sort order, default is ascending
+  //see lodash orderBy
+  var result = table.sort(['age'],['desc'])
 
 ```
 

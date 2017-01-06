@@ -223,6 +223,10 @@ module.exports = function(props){
     return lodash.values(primary())
   }
 
+  methods.sort = function(props,direction){
+    return lodash.orderBy(primary(),props,direction)
+  }
+
   methods.removeBy = function(prop,id){
     var value = remove(methods.getBy(prop,id))
     props.onRemove(value)
