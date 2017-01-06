@@ -188,7 +188,7 @@ Remove an object from memory and trigger onRemove callback. Throws if object doe
 ```
 
 ##Map, Filter, Reduce, Each, Sort
-Internally uses [lodash's]( www.lodash.com) "map", "filter", "reduce" and "each" functions over the entire table.  You can accomplish the same thing
+Internally uses [lodash's]( https://www.lodash.com) "map", "filter", "reduce" and "each" functions over the entire table.  You can accomplish the same thing
 with "list" getting all the data as an array, but this saves you an iteration over the table. Order of iteration is not gauranteed.
 
 ```js
