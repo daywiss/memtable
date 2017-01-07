@@ -24,7 +24,8 @@ test('memtable',function(t){
       primary:['id','name'],
       secondary:['name',['other','test']],
       searchable:['other'],
-      saveAll:true
+      saveAll:true,
+      warn:false
     })
     t.ok(table)
     t.end()
@@ -98,11 +99,13 @@ test('memtable',function(t){
   t.test('setAll',function(t){
     var list = [
       {id:'3',name:'d',other:'three'},
+      {id:'4',name:'e',other:'flour',test:'four'},
       {id:'4',name:'e',other:'four'},
       {id:'5',name:'f',other:'five'}
     ]
     var result = table.setAll(list)
-    t.equal(result.length,3)
+    t.equal(result.length,4)
+    t.equal(table.list().length,6)
     t.end()
   })
   t.test('has',function(t){
@@ -116,13 +119,13 @@ test('memtable',function(t){
     t.end()
   })
   t.test('hasAll',function(t){
-    var result = table.hasAll(['1','2','3'])
-    t.ok(result.length,3)
+    var result = table.hasAll(['1.b','2.c','3.d'])
+    t.ok(lodash.every(result,Boolean),true)
     t.end()
   })
   t.test('hasAllBy',function(t){
     var result = table.hasAllBy('name',['a','c','e'])
-    t.ok(result.length,3)
+    t.ok(lodash.every(result,Boolean),true)
     t.end()
   })
   t.test('list',function(t){
@@ -130,6 +133,24 @@ test('memtable',function(t){
     t.ok(result.length)
     t.end()
   })
+  t.test('lodash',function(t){
+    t.plan(2*table.list().length)
+    table.lodash().each(t.ok)
+    table.lodash(true).each(t.ok)
+  })
+
+  t.test('highland',function(t){
+    t.plan(2*table.list().length)
+    table.highland().each(t.ok)
+    table.highland(true).each(t.ok)
+  })
+
+  t.test('getPrimaryID',function(t){
+    var result = table.getPrimaryID(table.get('1.b'))
+    t.equal(result,'1.b')
+    t.end()
+  })
+
   t.test('remove',function(t){
     var result = table.remove([0,'a'])
     t.ok(result)
@@ -147,4 +168,5 @@ test('memtable',function(t){
     })
     t.end()
   })
+
 })

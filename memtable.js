@@ -1,5 +1,6 @@
 var lodash = require('lodash')
 var assert = require('assert')
+var highland = require('highland')
 
 //secondary:[] secondary keys
 //primary:'id'   id prop
@@ -19,6 +20,7 @@ module.exports = function(props){
     return table
   }
 
+  //joins array of properties together to make a key
   function makeKey(keys){
     if(lodash.isArray(keys)){
       return lodash.join(keys,props.delimiter)
@@ -26,6 +28,14 @@ module.exports = function(props){
     return keys
   }
 
+  function getPrimaryID(value){
+    if(lodash.isArray(props.primary)){
+      return compositeIndex(props.primary,value)
+    }
+    return lodash.get(value,props.primary)
+  }
+
+  //gets unique key from object and returns array
   function compositeIndex(composite,value){
     assert(lodash.every(composite,function(prop){ return lodash.has(value,prop) }),'Object Missing composite properties: ' + makeKey(composite))
     return makeKey(lodash.reduce(composite,function(result,prop){
@@ -70,6 +80,7 @@ module.exports = function(props){
       getBy(index,id) 
       return true
     }catch(e){
+      if(props.warn)  console.log(e)
       return false
     }
   }
@@ -82,18 +93,28 @@ module.exports = function(props){
     return lodash.pick(value,propsToKeep)
   }
 
+  //takes an object, and returns whats stored in table
+  //based on input object propsk
+  function get(value){
+    assert(value,'requires value with primary id')
+    var index = null
+    if(lodash.isArray(props.primary)){
+      index = compositeIndex(props.primary,value)
+    }else{
+      index = value[index]
+    }
+    return getBy(props.primary,index)
+  }
+
   function remove(value){
     assert(value,'requires value with id')
     removeBy(props.primary,value)
     lodash.each(props.secondary,function(index){
       try{
         removeBy(index,value)
-      }catch(e){ }
-    })
-    lodash.each(props.composite,function(index){
-      try{
-        removeBy(index,value)
-      }catch(e){ }
+      }catch(e){ 
+        if(props.warn) console.log(e)
+      }
     })
     return value
   }
@@ -112,21 +133,9 @@ module.exports = function(props){
     lodash.each(props.secondary,function(index){
       try{
         setBy(index,tosave)
-      }catch(e){ }
-    })
-
-    //save composite index
-    lodash.each(props.composite,function(index){
-      // console.log(index)
-      //ignore if object does not have all props
-      // if(lodash.every(index,function(prop){ return lodash.has(tosave,prop) })){
-        try{
-          // console.log('setting composite',index)
-          setBy(index,tosave)
-        }catch(e){ 
-          // throw e
-        }
-      // }
+      }catch(e){ 
+        if(props.warn) console.log(e)
+      }
     })
 
     return value
@@ -185,10 +194,12 @@ module.exports = function(props){
   methods.set = function(value){
     try{
       //remove if previously set so we can cleanly re index
-      remove(get(value[props.primary]))
-    }catch(e){ }
+      remove(get(value))
+    }catch(e){ 
+      if(props.warn)  console.log(e)
+    }
 
-    props.onChange(set(value))
+    props.onChange(set(value),getPrimaryID(value))
     return value
   }
 
@@ -219,6 +230,18 @@ module.exports = function(props){
     return lodash.each(primary(),each)
   }
 
+  //syncronous data iteration
+  methods.lodash = function(includeKeys){
+    if(includeKeys) return lodash(primary())
+    return lodash(primary()).values()
+  }
+
+  //async stream data 
+  methods.highland = function(includeKeys){
+    if(includeKeys) return highland.pairs(primary())
+    return highland.values(primary())
+  }
+
   methods.list = function(){
     return lodash.values(primary())
   }
@@ -229,7 +252,7 @@ module.exports = function(props){
 
   methods.removeBy = function(prop,id){
     var value = remove(methods.getBy(prop,id))
-    props.onRemove(value)
+    props.onRemove(value,getPrimaryID(value))
     return value
   }
 
@@ -256,6 +279,8 @@ module.exports = function(props){
   methods.state = function(){
     return state
   }
+
+  methods.getPrimaryID = getPrimaryID
 
   function init(p){
     props = lodash.defaults(p,{

@@ -8,15 +8,16 @@
   },
   "homepage": "https://github.com/daywiss/memtable",
   "bugs": {
-    "url" : "https://github.com/daywiss/memtable/issues"
+    "url": "https://github.com/daywiss/memtable/issues"
   },
-  "repository":{
-    "url":"https://github.com/daywiss/memtable"
+  "repository": {
+    "url": "https://github.com/daywiss/memtable"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "bluebird": "^3.4.7",
+    "highland": "^2.10.1",
     "lodash": "^4.17.3"
   },
   "devDependencies": {
