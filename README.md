@@ -242,7 +242,7 @@ See [lodash](https://www.lodash.com)
 
 ##Highland Streams
 Wrap the table in a highland stream, which gives you access to the node stream api as well as highlands api. Asyncronous operations.
-See [highland](http://www.highlandjs.com)
+See [highland](http://highlandjs.com)
 ```js  
   //highland is a node compatible stream which emits values from the table one by one
   table.highland().map(function(value){
