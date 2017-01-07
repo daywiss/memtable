@@ -225,6 +225,43 @@ with "list" getting all the data as an array, but this saves you an iteration ov
   var result = table.sort(['age'],['desc'])
 
 ```
+##Lodash Sequence
+Wrap table in a lodash sequence, letting you chain commands. Must call value at end to get results. Syncronous operations.
+See [lodash](https://www.lodash.com)
+```js
+  //wraps just table values
+  var result = table.lodash().filter(...).map(...).value()
+
+  //if you want primary keys and values use this
+  //which will wrap they primary table object and return value,key
+  var result = table.lodash(true).map(function(value,key){
+  }).value()
+
+
+```
+
+##Highland Streams
+Wrap the table in a highland stream, which gives you access to the node stream api as well as highlands api. Asyncronous operations.
+See [highland](http://www.highlandjs.com)
+```js  
+  //highland is a node compatible stream which emits values from the table one by one
+  table.highland().map(function(value){
+    //return modified value
+  }).filter(function(value){
+    //filter out values
+  }).toArray(function(result){
+    //get results as an array
+  })
+
+  //if you want key value pairs do this:
+  table.highland(true).each(function(pair){
+    //just calls highland.pairs(table) under the hood.
+    //key = pair[0]
+    //value = pair[1]
+  })
+
+```
+
 
 ##Drop
 Clear the table. Does not return anything
