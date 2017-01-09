@@ -22,7 +22,7 @@ test('memtable',function(t){
     table = Memtable({
       resume:resume,
       primary:['id','name'],
-      secondary:['name',['other','test']],
+      secondary:['name','other',['other','test']],
       searchable:['other'],
       saveAll:true,
       warn:false
@@ -149,6 +149,42 @@ test('memtable',function(t){
     var result = table.getPrimaryID(table.get('1.b'))
     t.equal(result,'1.b')
     t.end()
+  })
+
+  t.test('conflict',function(t){
+    try{
+      t.end(table.set({
+        id:'conflict', name:'a',other:'zero',test:'aa'
+      }))
+    }catch(e){
+      t.ok(e)
+      t.end()
+    }
+  })
+
+  t.test('update',function(t){
+    var result = table.update('1.b',{'blah':'blah',test:'bb'})
+    t.equal('blah',result.blah)
+    t.equal('bb',result.test)
+    t.deepEqual(result,table.get('1.b'))
+    t.end()
+  })
+
+  t.test('update conflict',function(t){
+    try{
+      t.end(table.updateBy('name','c',{'other':'four'}))
+    }catch(e){
+      t.ok(e)
+      t.end()
+    }
+  })
+  t.test('update primary ',function(t){
+    try{
+      t.end(table.update('2.c',{'name':'cc'}))
+    }catch(e){
+      t.ok(e)
+      t.end()
+    }
   })
 
   t.test('remove',function(t){

@@ -103,7 +103,8 @@ table = Table(options)
   }
 ``` 
 ##Set
-Save object to table, will trigger onChange callback. Will throw if required properties are not set.
+Save object to table, or replace existing object. Will trigger onChange callback. Will throw if required properties are not set. Will
+also throw if unique secondary id collides with another item already in table. 
 
 ```js
   //add a single object, returns the object back. Throws if required properties are not defined.
@@ -111,6 +112,18 @@ Save object to table, will trigger onChange callback. Will throw if required pro
 
   //add an array of objects, returns the list of objects back
   var result = table.setAll(objects)
+```
+
+##Update
+Update properties on an existing item in the table. Will throw if trying to update primary key(s).
+Will merge properties into the existing object in the table and trigger onChange callback.
+
+```js
+  //update item with the primaryid, returns the updated object.
+  var result = table.update('primaryid',propsToUpdate)
+
+  //update item by secondary id, specify the secondary key, secondary id and the updates to make
+  var result = table.updateBy('secondarykey','secondaryid',propsToUpdate)
 ```
 
 ##Get
@@ -225,6 +238,15 @@ with "list" getting all the data as an array, but this saves you an iteration ov
   var result = table.sort(['age'],['desc'])
 
 ```
+
+##Search
+Search over specified "searchable" properties in each item in the table. Case sensitive or insensitive. Partial matches returned. For custom search
+use table.filter and define your own.
+```js
+  //specify partial search and filters all objects which match. Must have specified them as "searchable" in initialization properties.
+  var result = table.search('de')
+```
+
 ##Lodash Sequence
 Wrap table in a lodash sequence, letting you chain commands. Must call value at end to get results. Syncronous operations.
 See [lodash](https://www.lodash.com)

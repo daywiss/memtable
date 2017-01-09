@@ -11,6 +11,8 @@ module.exports = function(props){
   var state = {}
   var propsToKeep = []
   var propsRequired = []
+  var uniqueProps = []
+  var primaryProps = []
 
   function getTable(index){
     assert(index === 0 || index,'requires table index')
@@ -25,18 +27,46 @@ module.exports = function(props){
     if(lodash.isArray(keys)){
       return lodash.join(keys,props.delimiter)
     }
+    //order is not guaranteed here so this is a problem
+    if(lodash.isObject(keys)){
+      return lodash(keys).keys().join(props.delimiter).value()
+    }
     return keys
   }
 
+  //check for unique props by looking at all secondary ids
+  //then comparing to make sure values primary ids match or dont exist
+  function collides(value){
+    var id = getPrimaryID(value) 
+    return lodash.some(props.secondary,function(index){
+      var val = null
+      try{
+        val = getBy(index,compositeIndex(index,value))
+      }catch(e){
+        return false
+      }
+      return getPrimaryID(val) != id
+    })
+  }
+
+  function touchesPrimary(prop){
+    assert(prop,'requires prop')
+    prop = lodash.toPath(prop)
+    prop = prop[0]
+    return lodash.some(primaryProps,function(p){
+      return p == prop
+    })
+  }
+
   function getPrimaryID(value){
-    if(lodash.isArray(props.primary)){
-      return compositeIndex(props.primary,value)
-    }
-    return lodash.get(value,props.primary)
+    return compositeIndex(props.primary,value)
   }
 
   //gets unique key from object and returns array
   function compositeIndex(composite,value){
+    if(!lodash.isArray(composite)){
+      return lodash.get(value,composite)
+    }
     assert(lodash.every(composite,function(prop){ return lodash.has(value,prop) }),'Object Missing composite properties: ' + makeKey(composite))
     return makeKey(lodash.reduce(composite,function(result,prop){
       result.push(lodash.get(value,prop))
@@ -46,11 +76,7 @@ module.exports = function(props){
 
   function setBy(index,value){
     var table = getTable(index)
-    if(lodash.isArray(index)){
-      index = compositeIndex(index,value)
-    }else{
-      index = value[index]
-    }
+    index = compositeIndex(index,value)
     table[index] = value
     return value
   }
@@ -119,6 +145,7 @@ module.exports = function(props){
     return value
   }
 
+  //dumb set
   function set(value){
     assert(value,'requires value with id prop')
 
@@ -128,8 +155,6 @@ module.exports = function(props){
       assert(lodash.has(tosave,prop),'required property ' + prop + ' not found')
     })
 
-    setBy(props.primary,tosave)
-
     lodash.each(props.secondary,function(index){
       try{
         setBy(index,tosave)
@@ -137,6 +162,8 @@ module.exports = function(props){
         if(props.warn) console.log(e)
       }
     })
+
+    setBy(props.primary,tosave)
 
     return value
   }
@@ -192,19 +219,39 @@ module.exports = function(props){
   }
 
   methods.set = function(value){
-    try{
-      //remove if previously set so we can cleanly re index
-      remove(get(value))
-    }catch(e){ 
-      if(props.warn)  console.log(e)
-    }
-
+    assert(!collides(value),'Unable to set because a unique value exists on an item with different primary key')
     props.onChange(set(value),getPrimaryID(value))
     return value
   }
 
   methods.setAll = function(values){
     return lodash.map(values,methods.set)
+  }
+
+  //index is the table index name
+  //id is the unique id of the item
+  //prop is the property on the item to update
+  //value is the value on the item property to update
+  methods.updateBy = function(index,id,kv){
+    assert(lodash.isPlainObject(kv),'requires an object with key value')
+    var item = methods.getBy(index,id)
+    //if all props are the same do nothing and return item
+    if(lodash.every(kv,function(value,key){
+      return lodash.isEqual(value,item[key])
+    })){
+      return item
+    }
+
+    lodash.each(function(value,key){
+      assert(!touchesPrimary(key),'you cannot update primary id, use set instead')
+    })
+
+    return methods.set(lodash.defaults(kv,item))
+    // return methods.set(lodash.assign(lodash.cloneDeep(item),kv))
+  }
+
+  methods.update = function(id,kv){
+    return methods.updateBy(props.primary,id,kv)
   }
 
   methods.search = function(query,insensitive){
@@ -296,18 +343,30 @@ module.exports = function(props){
       onRemove:function(x){return x},
     })
 
-    propsToKeep = lodash.concat(
-        lodash.flatten([props.primary]),
+    propsToKeep = lodash([props.primary])
+      .concat( 
         props.searchable,
         props.secondary,
         props.save,
         props.required
-    )
+      )
+      .flattenDeep()
+      .uniq()
+      .value()
 
-    propsRequired = lodash.concat(
-        props.required,
-        lodash.flatten([props.primary])
-    )
+    propsRequired = lodash([props.primary])
+      .concat(props.required)
+      .flattenDeep()
+      .uniq()
+      .value()
+
+    uniqueProps = lodash([props.primary])
+      .concat(props.secondary)
+      .flattenDeep()
+      .uniq()
+      .value()
+
+    primaryProps = lodash.flatten([props.primary])
 
     state[makeKey(props.primary)] = {}
 

@@ -1,6 +1,6 @@
 {
   "name": "memtable",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Syncronous in memory table with simple schema and queries",
   "main": "index.js",
   "scripts": {
