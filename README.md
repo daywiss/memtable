@@ -1,18 +1,18 @@
-#MemTable
+# MemTable
 Basic operations on a database table, but in memory, all syncronous calls. 
 Only retains data from objects required for table operations to minimize memory footprint, 
 such as unique indexes and filterable fields. Use in conjunction with a permanent data store. 
 
-#Install
+# Install
 `npm install memtable`
 
-#Why
+# Why
 Allows you to cache data in a way to be essentially database agnostic and still have useful queries
 all done in memory.  As long as you are not dealing with big data, memory is a perfectly fine store for
 millions of entries. Your backend store just needs to supply the ability to upsert on change event, and 
 restore table on start.
 
-#Usage
+# Usage
 ```js
   var Table = require('memtable')
 
@@ -51,7 +51,7 @@ restore table on start.
 
 ``` 
 
-#Restore and Persist data
+# Restore and Persist data
 
 ```js
    //assume we have a user model that uses promises to persist data to database
@@ -83,7 +83,7 @@ restore table on start.
 
 #API
 
-##Initialization Options
+## Initialization Options
 ```js
 var Table = require('memtable')
 table = Table(options)
@@ -102,7 +102,7 @@ table = Table(options)
     onRemove:function(x){ return x}, //this function will get called after memory is deleted
   }
 ``` 
-##Set
+## Set
 Save object to table, or replace existing object. Will trigger onChange callback. Will throw if required properties are not set. Will
 also throw if unique secondary id collides with another item already in table. 
 
@@ -114,7 +114,7 @@ also throw if unique secondary id collides with another item already in table.
   var result = table.setAll(objects)
 ```
 
-##Update
+## Update
 Update properties on an existing item in the table. Will throw if trying to update primary key(s).
 Will merge properties into the existing object in the table and trigger onChange callback.
 
@@ -126,7 +126,7 @@ Will merge properties into the existing object in the table and trigger onChange
   var result = table.updateBy('secondarykey','secondaryid',propsToUpdate)
 ```
 
-##Get
+## Get
 Get an object from table. Will throw if object does not exist.
 ```js
   //get object by primary id, returns the stored object. 
@@ -150,7 +150,7 @@ Get an object from table. Will throw if object does not exist.
 
 ```
 
-##Has
+## Has
 Check if an object exists in the table. Will never throw. returns only true or false for each object checked.
 
 ```js
@@ -177,7 +177,7 @@ Check if an object exists in the table. Will never throw. returns only true or f
   var result = table.hasAllBy(['prop1','prop2'],[['objectprop1','objectprop2']])
 ```
 
-##Remove
+## Remove
 Remove an object from memory and trigger onRemove callback. Throws if object does not exist. Each remove returns the object removed.
 
 ```js
@@ -200,7 +200,7 @@ Remove an object from memory and trigger onRemove callback. Throws if object doe
   var result = table.removeAllBy(['prop1','prop2'],[['compositevalue1','compositevalue2']])
 ```
 
-##Map, Filter, Reduce, Each, Sort
+## Map, Filter, Reduce, Each, Sort
 Internally uses [lodash's]( https://www.lodash.com) "map", "filter", "reduce" and "each" functions over the entire table.  You can accomplish the same thing
 with "list" getting all the data as an array, but this saves you an iteration over the table. Order of iteration is not gauranteed.
 
@@ -239,7 +239,7 @@ with "list" getting all the data as an array, but this saves you an iteration ov
 
 ```
 
-##Search
+## Search
 Search over specified "searchable" properties in each item in the table. Case sensitive or insensitive. Partial matches returned. For custom search
 use table.filter and define your own.
 ```js
@@ -262,7 +262,7 @@ See [lodash](https://www.lodash.com)
 
 ```
 
-##Highland Streams
+## Highland Streams
 Wrap the table in a highland stream, which gives you access to the node stream api as well as highlands api. Asyncronous operations.
 See [highland](http://highlandjs.org)
 ```js  
@@ -285,19 +285,19 @@ See [highland](http://highlandjs.org)
 ```
 
 
-##Drop
+## Drop
 Clear the table. Does not return anything
 ```js
   table.drop()
 ```
 
-##List
+## List
 Get an array of all objects in the table.
 ```js
   var result = table.list()
 ```
 
-##State
+## State
 Get the entire table state as an object. Will include all secondary and composite indexes.
 ```js
   //returns an object which represents the table in memory

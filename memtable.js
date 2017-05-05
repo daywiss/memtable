@@ -82,7 +82,7 @@ module.exports = function(props){
   }
 
   function getBy(index,id){
-    assert(id === 0 || id,'requires secondary id')
+    assert(id === 0 || id,'requires id')
     var table = getTable(index)
     id = makeKey(id)
     var result = table[id]
@@ -132,9 +132,16 @@ module.exports = function(props){
     return getBy(props.primary,index)
   }
 
-  function remove(value){
-    assert(value,'requires value with id')
-    removeBy(props.primary,value)
+
+  function updateSecondaryIDs(next,prev){
+    lodash.each(props.secondary,function(index){
+      if(lodash.get(next,index) == lodash.get(prev,index)) return
+      removeBy(index,prev)
+    })
+    return next
+  }
+
+  function removeSecondaryIndices(value){
     lodash.each(props.secondary,function(index){
       try{
         removeBy(index,value)
@@ -142,6 +149,12 @@ module.exports = function(props){
         if(props.warn) console.log(e)
       }
     })
+  }
+
+  function remove(value){
+    assert(value,'requires value with id')
+    removeBy(props.primary,value)
+    removeSecondaryIndices(value)
     return value
   }
 
@@ -219,8 +232,15 @@ module.exports = function(props){
   }
 
   methods.set = function(value){
-    assert(!collides(value),'Unable to set because a unique value exists on an item with different primary key')
-    props.onChange(set(value),getPrimaryID(value))
+    assert(!collides(value),'Trying to set a record which collides with unique value of another record')
+    var id = getPrimaryID(value)
+    if(methods.has(id)){
+      //value exists at this id, delete all secondary references
+      var prev = getBy(props.primary,id)
+      updateSecondaryIDs(value,prev)
+    }
+    var result = set(value)
+    props.onChange(result,id)
     return value
   }
 
@@ -245,11 +265,12 @@ module.exports = function(props){
     lodash.each(function(value,key){
       assert(!touchesPrimary(key),'you cannot update primary id, use set instead')
     })
-
-    return methods.set(lodash.defaults(kv,item))
+    //we need to remove all references to  secondary ids which may have changed
+    return methods.set(lodash.assign(item,kv))
     // return methods.set(lodash.assign(lodash.cloneDeep(item),kv))
   }
 
+  //update record by merging in kv
   methods.update = function(id,kv){
     return methods.updateBy(props.primary,id,kv)
   }

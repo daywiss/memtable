@@ -186,6 +186,18 @@ test('memtable',function(t){
       t.end()
     }
   })
+  t.test('update secondary',function(t){
+    var result = table.update(['4','e'],{id:'4',name:'e',other:'roses',test:'four'})
+    var compare = table.getBy('other','roses')
+    t.equal(compare.other,'roses')
+    try{
+      table.getBy('other','flour')
+    }catch(e){
+      t.ok(e)
+    }
+    t.ok(result)
+    t.end()
+  })
 
   t.test('remove',function(t){
     var result = table.remove([0,'a'])
@@ -202,6 +214,23 @@ test('memtable',function(t){
     lodash.each(table.state(),function(value){
       t.deepEqual(value,{})
     })
+    t.end()
+  })
+
+  t.test('secondary index test',function(t){
+    var table = Memtable({
+      secondary:['name']
+    })
+    table.set({
+      id:'testa',name:'blah1'
+    })
+    table.set({
+      id:'testa',name:'blah2'
+    })
+    var result = table.set({
+      id:'testb',name:'blah1'
+    })
+    t.ok(result)
     t.end()
   })
 
