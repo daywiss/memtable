@@ -96,6 +96,14 @@ test('memtable',function(t){
     t.ok(result)
     t.end()
   })
+
+  t.test('set',function(t){
+    console.log(table.list())
+    var result = table.set({id:'2',name:'c',other:2})
+    t.ok(result)
+    t.end()
+  })
+
   t.test('setAll',function(t){
     var list = [
       {id:'3',name:'d',other:'three'},
