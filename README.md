@@ -69,8 +69,8 @@ restore table on start.
      var Users = Table({
        //resume previously persisted users
        resume:users,
-       //set memtable to only retain 'id' field (default primary key) and 'email' field
-       unique:['email'],
+       //set memtable to only retain 'id' field (default primary key) and secondary 'email' field
+       secondary:['email'],
        //the table will call this every time memory is changed, it will ignore any return value.
        onChange:handleChange
      })
@@ -98,8 +98,8 @@ table = Table(options)
     resume:[], //array of table objects to resume from
     save:[], //properties on object to always store in memory, but not to index or filter on
     saveAll:false, //save entire object in memory rather than just primary/unique/filterable props. Only do if you know objects are small. 
-    onChange:function(x){ return x}, //this function will get called after memory is set
-    onRemove:function(x){ return x}, //this function will get called after memory is deleted
+    onChange:function(x, primaryid){ return x}, //this function will get called after memory is set
+    onRemove:function(x, primaryid){ return x}, //this function will get called after memory is deleted
   }
 ``` 
 ## Set
