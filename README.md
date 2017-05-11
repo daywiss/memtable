@@ -81,7 +81,7 @@ restore table on start.
 
 ``` 
 
-#API
+# API
 
 ## Initialization Options
 ```js
