@@ -19,7 +19,7 @@ restore table on start.
   //all options optional
   var users = Table({
     primary:'id', //primary index, defaults to id, must be unique
-    unique:['login','email'], //unique secondary ids
+    secondary:['login','email'], //unique secondary ids
     searchable:['name','email','login'], //non unique properties which can be searched
     save:[] //specify any data you want saved in memory
     saveAll:false, //save all props in memory, for known small data objects
@@ -81,7 +81,7 @@ restore table on start.
 
 ``` 
 
-#API
+# API
 
 ## Initialization Options
 ```js
