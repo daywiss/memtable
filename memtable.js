@@ -218,7 +218,6 @@ module.exports = function(props){
     return methods.hasBy(props.primary,id)
   }
 
-
   methods.hasAll = function(ids){
     return lodash.map(ids,function(id){
       return methods.has(id)
@@ -266,7 +265,7 @@ module.exports = function(props){
       assert(!touchesPrimary(key),'you cannot update primary id, use set instead')
     })
     //we need to remove all references to  secondary ids which may have changed
-    return methods.set(lodash.assign(item,kv))
+    return methods.set(lodash.assign({},item,kv))
     // return methods.set(lodash.assign(lodash.cloneDeep(item),kv))
   }
 

@@ -235,9 +235,25 @@ test('memtable',function(t){
     table.set({
       id:'testa',name:'blah2'
     })
+    table.update('testa',{
+      name:'blah3'
+    })
     var result = table.set({
       id:'testb',name:'blah1'
     })
+
+    try{
+      t.notOk(table.getBy('name','blah2'))
+      // console.log(table.getBy('name','blah2'))
+      // return t.end('should not get value')
+    }catch(e){
+      t.ok(e)
+    }
+    t.ok(table.get('testa'))
+    t.ok(table.get('testb'))
+    t.ok(table.getBy('name','blah1'))
+    t.ok(table.getBy('name','blah3'))
+
     t.ok(result)
     t.end()
   })
