@@ -25,7 +25,7 @@ test('memtable',function(t){
       secondary:['name','other',['other','test']],
       searchable:['other'],
       saveAll:true,
-      warn:false
+      warn:true
     })
     t.ok(table)
     t.end()
@@ -98,7 +98,6 @@ test('memtable',function(t){
   })
 
   t.test('set',function(t){
-    console.log(table.list())
     var result = table.set({id:'2',name:'c',other:2})
     t.ok(result)
     t.end()
@@ -255,6 +254,34 @@ test('memtable',function(t){
     t.ok(table.getBy('name','blah3'))
 
     t.ok(result)
+    t.end()
+  })
+  t.test('secondary compound index',function(t){
+    var table = Memtable({
+      secondary:[['first','last']]
+    })
+    table.set({
+      id:'1',
+      first:'firsta',
+      last:'lasta',
+    })
+    table.update('1',{
+      last:'lastb',
+    })
+    table.update('1',{
+      last:'lastc',
+    })
+    try{
+      t.notOk(table.getBy(['first','last'],['firsta','lasta']))
+    }catch(e){
+      t.ok(e)
+    }
+    try{
+      t.notOk(table.getBy(['first','last'],['firsta','lastb']))
+    }catch(e){
+      t.ok(e)
+    }
+    t.ok(table.getBy(['first','last'],['firsta','lastc']))
     t.end()
   })
 

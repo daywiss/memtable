@@ -67,7 +67,11 @@ module.exports = function(props){
     if(!lodash.isArray(composite)){
       return lodash.get(value,composite)
     }
-    assert(lodash.every(composite,function(prop){ return lodash.has(value,prop) }),'Object Missing composite properties: ' + makeKey(composite))
+    var hasAllProps = lodash.every(composite,function(prop){ 
+      return lodash.has(value,prop) 
+    })
+
+    assert(hasAllProps,'Object Missing required composite properties: ' + makeKey(composite))
     return makeKey(lodash.reduce(composite,function(result,prop){
       result.push(lodash.get(value,prop))
       return result
@@ -135,7 +139,19 @@ module.exports = function(props){
 
   function updateSecondaryIDs(next,prev){
     lodash.each(props.secondary,function(index){
-      if(lodash.get(next,index) == lodash.get(prev,index)) return
+      var a, b = null
+      if(lodash.isArray(index)){
+        try{
+          a = compositeIndex(index,prev)
+          b = compositeIndex(index,next)
+        }catch(e){
+          if(props.warn) console.log(e)
+        }
+      }else{
+        a =  lodash.get(prev,index)
+        b = lodash.get(next,index)
+      }
+      if(a==b) return
       removeBy(index,prev)
     })
     return next
