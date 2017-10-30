@@ -29,7 +29,7 @@ module.exports = function(props){
     }
     //order is not guaranteed here so this is a problem
     if(lodash.isObject(keys)){
-      return lodash(keys).keys().join(props.delimiter).value()
+      return lodash(keys).keys().join(props.delimiter)
     }
     return keys
   }
