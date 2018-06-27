@@ -194,7 +194,7 @@ module.exports = function(config){
     return getIndex(name).search(query,insensitive,id)
   }
 
-  return {
+  return lodash.assign(emitter,{
     get,getAll,getBy, getAllBy,
     set, setAll,update, updateBy,
     has, hasBy, hasAllBy,
@@ -203,5 +203,5 @@ module.exports = function(config){
     values,keys,entries,
     lodash:ld,highland:hl,
     map,filter,reduce,
-  }
+  })
 }

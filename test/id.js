@@ -43,6 +43,11 @@ test('id',t=>{
       setId({id:''})
       t.end()
     })
+    t.test('alternate string',t=>{
+      const {setId} = ID(undefined,'_id')
+      setId({_id:0})
+      t.end()
+    })
     t.test('invalid',t=>{
       try{
         ID(undefined,{id:'invalid'})

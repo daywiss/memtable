@@ -108,6 +108,11 @@ test('many table',t=>{
     t.deepEqual(result,user)
     t.end()
   })
+  t.test('lodash',t=>{
+    const table = Table('secondary','username')
+    t.ok( table.lodash())
+    t.end()
+  })
 })
 
 

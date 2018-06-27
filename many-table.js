@@ -2,6 +2,7 @@ const ID = require('./id')
 const assert = require('assert')
 const highland = require('highland')
 const lodash = require('lodash')
+const utils = require('./utils')
 const KV = require('./kv')
 
 module.exports = function(name,index,required=true,delim='-'){

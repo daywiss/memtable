@@ -97,6 +97,11 @@ test('unique table',t=>{
     t.notOk(table.get(value.id))
     t.end()
   })
+  t.test('lodash',t=>{
+    const table = Unique()
+    t.ok( table.lodash())
+    t.end()
+  })
 })
 
 

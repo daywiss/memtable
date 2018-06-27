@@ -33,6 +33,15 @@ test('memtable',t=>{
     t.deepEqual(result,table.setAll(users))
     t.end()
   })
+  t.test('set alternate primary',t=>{
+    const table = Table({
+      primary:{index:'_id'}
+    })
+    table.set({_id:0})
+    const result = table.get(0)
+    t.equal(result._id,0)
+    t.end()
+  })
   t.test('get',t=>{
     const result = table.get(users[0].id)
     t.equal(users[0],result)
@@ -96,6 +105,11 @@ test('memtable',t=>{
     t.notOk(table.has(users[0].id))
     t.ok(result)
     t.end()
+  })
+  t.test('emitter',t=>{
+    table.on('change',x=>x)
+    t.end()
+
   })
 })
 
