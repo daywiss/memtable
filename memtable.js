@@ -1,420 +1,207 @@
 var lodash = require('lodash')
 var assert = require('assert')
 var highland = require('highland')
+var Emitter = require('events')
 
-//secondary:[] secondary keys
-//primary:'id'   id prop
-//resume:[] data to resume
-//filterable:[] keys to store in memory to filter on
-module.exports = function(props){
+var UniqueTable = require('./unique-table')
+var ManyTable = require('./many-table')
+// var Indexer = require('./indexer')
+var ID = require('./id')
 
-  var state = {}
-  var propsToKeep = []
-  var propsRequired = []
-  var uniqueProps = []
-  var primaryProps = []
+module.exports = function(config){
+  function defaultConfig(props){
+    return lodash.defaultsDeep(props,{
+      primary:{index:'id',required:true,unique:true},
+      indexes:[ ],
+      searchable:[],
+      saveAll:true,
+      pick:[],
+    })
+  }
+  config = defaultConfig(config)
 
-  function getTable(index){
-    assert(index === 0 || index,'requires table index')
-    index = makeKey(index)
-    var table = state[index]
-    assert(table,'unable to find table with index ' + index)
-    return table
+  const indexes = new Map()
+  const primary = UniqueTable('primary',config.primary.index,true)
+  const emitter = new Emitter()
+
+  lodash.each(config.indexes,(opts,name)=>{
+    addIndex(opts.name,opts.index,opts.required,opts.unique,opts.delimiter)
+  })
+
+  config = defaultConfig(config)
+
+  function emit(type,value,id,prev,update,index){
+    emitter.emit('change',{ type,value,prev,update,index })
   }
 
-  //joins array of properties together to make a key
-  function makeKey(keys){
-    if(lodash.isArray(keys)){
-      return lodash.join(keys,props.delimiter)
+  function getIndex(name='primary'){
+    if(name=='primary') return primary
+    assert(indexes.has(name),'Index by ' + name + ' does not exist')
+    return indexes.get(name)
+  }
+  
+  function addIndex(name,index,required,unique,delimiter){
+    if(unique){
+      indexes.set(name,UniqueTable(name,index,required,delimiter))
+    }else{
+      indexes.set(name,ManyTable(name,index,required,delimiter))
     }
-    //order is not guaranteed here so this is a problem
-    if(lodash.isObject(keys)){
-      return lodash(keys).keys().join(props.delimiter)
-    }
-    return keys
   }
 
-  //check for unique props by looking at all secondary ids
-  //then comparing to make sure values primary ids match or dont exist
-  function collides(value){
-    var id = getPrimaryID(value) 
-    return lodash.some(props.secondary,function(index){
-      var val = null
-      try{
-        val = getBy(index,compositeIndex(index,value))
-      }catch(e){
-        return false
-      }
-      return getPrimaryID(val) != id
+  function initIndex(){
+    primary.each((value,id)=>{
+      set(value,true)
     })
   }
 
-  function touchesPrimary(prop){
-    assert(prop,'requires prop')
-    prop = lodash.toPath(prop)
-    prop = prop[0]
-    return lodash.some(primaryProps,function(p){
-      return p == prop
+  function removeIndex(name){
+    indexes.delete(name)
+  }
+
+  function valuesBy(name){
+    const table = getIndex(name)
+    return table.values()
+  }
+
+  function values(){
+    valuesBy('primary')
+  }
+
+  function set(value,silent=false){
+    const [id,prev] = getIndex().validate(value,null,true)
+
+    const ids = {}
+    indexes.forEach((index,name)=>{
+      const [id] = index.validate(value,prev)
+      ids[name] = id
     })
-  }
 
-  function getPrimaryID(value){
-    return compositeIndex(props.primary,value)
-  }
-
-  //gets unique key from object and returns array
-  function compositeIndex(composite,value){
-    if(!lodash.isArray(composite)){
-      return lodash.get(value,composite)
-    }
-    var hasAllProps = lodash.every(composite,function(prop){ 
-      return lodash.has(value,prop) 
+    primary.set(id,value)
+    indexes.forEach((index,name)=>{
+      index.remove(ids[name],prev)
+      index.set(ids[name],value)
     })
 
-    assert(hasAllProps,'Object Missing required composite properties: ' + makeKey(composite))
-    return makeKey(lodash.reduce(composite,function(result,prop){
-      result.push(lodash.get(value,prop))
-      return result
-    },[]))
-  }
+    if(!silent) emit('set',value,id,prev,value,'primary')
 
-  function setBy(index,value){
-    var table = getTable(index)
-    index = compositeIndex(index,value)
-    table[index] = value
     return value
   }
 
-  function getBy(index,id){
-    assert(id === 0 || id,'requires id')
-    var table = getTable(index)
-    id = makeKey(id)
-    var result = table[id]
-    assert(result,'unable to find id: ' + id + ' on index: ' + index)
+  function setAll(values=[]){
+    values = lodash.castArray(values)
+    return values.map(set)
+  }
+
+  function update(id,value){
+    return updateBy('primary',id,value)
+  }
+
+  function updateBy(name='primary',id,value,silent){
+    const index = getIndex(name)
+    const prev = index.getOne(id)
+    const result = set(lodash.merge(prev,value),true)
+    if(!silent) emit('update',result,id,prev,value,name)
     return result
   }
 
-  function removeBy(index,value){
-    var table = getTable(index)
-
-    if(lodash.isArray(index)){
-      index = compositeIndex(index,value)
-    }else{
-      index = value[index]
-    }
-    delete table[index]
+  function get(id,fallback){
+    return getBy('primary',id,fallback)
   }
 
-  function hasBy(index,id){
-    try{
-      getBy(index,id) 
-      return true
-    }catch(e){
-      if(props.warn)  console.log(e)
-      return false
-    }
+  function getBy(name='primary',id,fallback){
+    const result = getAllBy(name,[id],fallback)
+    return result[0]
   }
 
-  function primary(){
-    return getTable(props.primary)
+  function getAll(ids,fallback){
+    return getAllBy('primary',ids,fallback)
   }
 
-  function strip(value){
-    return lodash.pick(value,propsToKeep)
-  }
-
-  //takes an object, and returns whats stored in table
-  //based on input object propsk
-  function get(value){
-    assert(value,'requires value with primary id')
-    var index = null
-    if(lodash.isArray(props.primary)){
-      index = compositeIndex(props.primary,value)
-    }else{
-      index = value[index]
-    }
-    return getBy(props.primary,index)
-  }
-
-
-  function updateSecondaryIDs(next,prev){
-    lodash.each(props.secondary,function(index){
-      var a, b = null
-      if(lodash.isArray(index)){
-        try{
-          a = compositeIndex(index,prev)
-          b = compositeIndex(index,next)
-        }catch(e){
-          if(props.warn) console.log(e)
-        }
-      }else{
-        a =  lodash.get(prev,index)
-        b = lodash.get(next,index)
-      }
-      if(a==b) return
-      removeBy(index,prev)
-    })
-    return next
-  }
-
-  function removeSecondaryIndices(value){
-    lodash.each(props.secondary,function(index){
-      try{
-        removeBy(index,value)
-      }catch(e){ 
-        if(props.warn) console.log(e)
-      }
+  function getAllBy(name='primary',ids=[],fallback){
+    ids = lodash.castArray(ids)
+    let table = getIndex(name)
+    return ids.map(id=>{
+      const val = table.get(id)
+      if(val == null) return fallback
+      return val
     })
   }
 
-  function remove(value){
-    assert(value,'requires value with id')
-    removeBy(props.primary,value)
-    removeSecondaryIndices(value)
-    return value
+  function has(id){
+    return hasBy('primary',id)
   }
 
-  //dumb set
-  function set(value){
-    assert(value,'requires value with id prop')
+  function hasBy(name='primary',id){
+    const result = hasAllBy(name,[id])
+    return result[0]
+  }
 
-    var tosave = props.saveAll ? value : strip(value)
+  function hasAllBy(name='primary',ids=[]){
+    ids = lodash.castArray(ids)
+    let table = getIndex(name)
+    return ids.map(table.has)
+  }
 
-    lodash.each(propsRequired,function(prop){
-      assert(lodash.has(tosave,prop),'required property ' + prop + ' not found')
+  function remove(id){
+    const result = removeAll([id])
+    return result[0]
+  }
+
+  function removeAll(ids=[],silent){
+    ids = lodash.castArray(ids)
+    const table = getIndex()
+    const result = []
+    ids.forEach(id=>{
+      const prev = table.remove(id)
+      result.push(prev)
+      indexes.forEach(index=>{
+        index.remove(id,prev)
+      })
+      if(!silent) emit('remove',null,id,prev,null,'primary')
     })
 
-    lodash.each(props.secondary,function(index){
-      try{
-        setBy(index,tosave)
-      }catch(e){ 
-        if(props.warn) console.log(e)
-      }
-    })
-
-    setBy(props.primary,tosave)
-
-    return value
+    return result
   }
 
-  function isMatch(objectToSearch,query,propsToMatch,insensitive){
-    return lodash.find(propsToMatch,function(prop){
-      var value = insensitive ? lodash.toUpper(lodash.get(objectToSearch,prop)) : lodash.get(objectToSearch,prop)
-      return lodash.includes(value,query)
-    })
+  function values(name,id){
+    return getIndex(name).values(id)
+  }
+  function keys(name,id){
+    return getIndex(name).keys(id)
+  }
+  function entries(name,id){
+    return getIndex(name).entries(id)
+  }
+  function ld(name,id,entries){
+    return getIndex(name).lodash(id,entries)
+  }
+  function hl(name,id,entries){
+    return getIndex(name).highland(id,entries)
+  }
+  function map(map,name,id){
+    return getIndex(name).map(map,id)
+  }
+  function filter(filter,name,id){
+    return getIndex(name).filter(filter,id)
+  }
+  function reduce(reduce,start,name,id){
+    return getIndex(name).reduce(reduce,start,id)
+  }
+  function each(each,name,id){
+    return getIndex(name).each(each,id)
+  }
+  function search(query,insensitive,name,id){
+    return getIndex(name).search(query,insensitive,id)
   }
 
-  var methods = {}
-
-  methods.getBy = function(prop,key){
-    return getBy(prop,key)
+  return {
+    get,getAll,getBy, getAllBy,
+    set, setAll,update, updateBy,
+    has, hasBy, hasAllBy,
+    remove, removeAll,
+    addIndex,removeIndex,initIndex,
+    values,keys,entries,
+    lodash:ld,highland:hl,
+    map,filter,reduce,
   }
-
-  methods.get = function(id){
-    return methods.getBy(props.primary,id)
-  }
-
-  methods.getAll = function(ids){
-    return lodash.map(ids,function(id){
-      return methods.get(id)
-    })
-  }
-
-  methods.getAllBy = function(prop,keys){
-    return lodash.map(keys,function(key){
-      return methods.getBy(prop,key)
-    })
-  }
-
-  methods.hasBy = function(prop,id){
-    return hasBy(prop,id)
-  }
-
-  methods.has = function(id){
-    return methods.hasBy(props.primary,id)
-  }
-
-  methods.hasAll = function(ids){
-    return lodash.map(ids,function(id){
-      return methods.has(id)
-    })
-  }
-
-  methods.hasAllBy = function(prop,ids){
-    return lodash.map(ids,function(id){
-      return methods.hasBy(prop,id)
-    })
-  }
-
-  methods.set = function(value){
-    assert(!collides(value),'Trying to set a record which collides with unique value of another record')
-    var id = getPrimaryID(value)
-    if(methods.has(id)){
-      //value exists at this id, delete all secondary references
-      var prev = getBy(props.primary,id)
-      updateSecondaryIDs(value,prev)
-    }
-    var result = set(value)
-    props.onChange(result,id)
-    return value
-  }
-
-  methods.setAll = function(values){
-    return lodash.map(values,methods.set)
-  }
-
-  //index is the table index name
-  //id is the unique id of the item
-  //prop is the property on the item to update
-  //value is the value on the item property to update
-  methods.updateBy = function(index,id,kv){
-    assert(lodash.isPlainObject(kv),'requires an object with key value')
-    var item = methods.getBy(index,id)
-    //if all props are the same do nothing and return item
-    if(lodash.every(kv,function(value,key){
-      return lodash.isEqual(value,item[key])
-    })){
-      return item
-    }
-
-    lodash.each(function(value,key){
-      assert(!touchesPrimary(key),'you cannot update primary id, use set instead')
-    })
-    //we need to remove all references to  secondary ids which may have changed
-    return methods.set(lodash.assign({},item,kv))
-    // return methods.set(lodash.assign(lodash.cloneDeep(item),kv))
-  }
-
-  //update record by merging in kv
-  methods.update = function(id,kv){
-    return methods.updateBy(props.primary,id,kv)
-  }
-
-  methods.search = function(query,insensitive){
-    query = insensitive ? lodash.toUpper(query) : query
-    return lodash.filter(primary(),function(value,key){
-      return isMatch(value,query,props.searchable,insensitive)
-    })
-  }
-
-  methods.filter = function(filter){
-    return lodash.filter(primary(),filter)
-  }
-
-  methods.reduce = function(reduce,start){
-    return lodash.reduce(primary(),reduce,start)
-  }
-
-  methods.map = function(map){
-    return lodash.map(primary(),map)
-  }
-
-  methods.each = function(each){
-    return lodash.each(primary(),each)
-  }
-
-  //syncronous data iteration
-  methods.lodash = function(includeKeys){
-    if(includeKeys) return lodash(primary())
-    return lodash(primary()).values()
-  }
-
-  //async stream data 
-  methods.highland = function(includeKeys){
-    if(includeKeys) return highland.pairs(primary())
-    return highland.values(primary())
-  }
-
-  methods.list = function(){
-    return lodash.values(primary())
-  }
-
-  methods.sort = function(props,direction){
-    return lodash.orderBy(primary(),props,direction)
-  }
-
-  methods.removeBy = function(prop,id){
-    var value = remove(methods.getBy(prop,id))
-    props.onRemove(value,getPrimaryID(value))
-    return value
-  }
-
-  methods.remove = function(id){
-    return methods.removeBy(props.primary,id)
-  }
-
-  methods.removeAll = function(ids){
-   return lodash.map(ids,methods.remove)
-  }
-
-  methods.removeAllBy = function(prop,ids){
-    return lodash.map(ids,function(id){
-      return methods.removeBy(prop,id)
-    })
-  }
-
-  methods.drop = function(){
-    lodash.each(state,function(value,key){
-      state[key] = {}
-    })
-  }
-
-  methods.state = function(){
-    return state
-  }
-
-  methods.getPrimaryID = getPrimaryID
-
-  function init(p){
-    props = lodash.defaults(p,{
-      primary:'id',
-      secondary:[],
-      searchable:[],
-      required:[],
-      save:[],
-      resume:[],
-      saveAll:false,
-      delimiter:'.',
-      onChange:function(x){return x},
-      onRemove:function(x){return x},
-    })
-
-    propsToKeep = lodash([props.primary])
-      .concat( 
-        props.searchable,
-        props.secondary,
-        props.save,
-        props.required
-      )
-      .flattenDeep()
-      .uniq()
-      .value()
-
-    propsRequired = lodash([props.primary])
-      .concat(props.required)
-      .flattenDeep()
-      .uniq()
-      .value()
-
-    uniqueProps = lodash([props.primary])
-      .concat(props.secondary)
-      .flattenDeep()
-      .uniq()
-      .value()
-
-    primaryProps = lodash.flatten([props.primary])
-
-    state[makeKey(props.primary)] = {}
-
-    lodash.each(props.secondary,function(index){
-      index = makeKey(index)
-      state[index] = {}
-    })
-
-    lodash.each(props.resume,set)
-
-    return methods
-  }
-
-  return init(props)
 }
