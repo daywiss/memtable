@@ -113,6 +113,12 @@ test('many table',t=>{
     t.ok( table.lodash())
     t.end()
   })
+  t.test('size',t=>{
+    const table = Table('secondary','username')
+    t.equal(table.size(),0)
+    t.equal(table.size('id'),0)
+    t.end()
+  })
 })
 
 

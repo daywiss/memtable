@@ -13,9 +13,8 @@ module.exports = function(config){
     return lodash.defaultsDeep(props,{
       primary:{index:'id',required:true,unique:true},
       indexes:[ ],
-      searchable:[],
-      saveAll:true,
-      pick:[],
+      preSet:x=>x,
+      postSet:x=>x,
     })
   }
   config = defaultConfig(config)
@@ -68,7 +67,11 @@ module.exports = function(config){
   }
 
   function set(value,silent=false){
-    const [id,prev] = getIndex().validate(value,null,true)
+    const primary = getIndex()
+    
+    value = config.preSet(value,primary.size())
+
+    const [id,prev] = primary.validate(value,null,true)
 
     const ids = {}
     indexes.forEach((index,name)=>{
@@ -81,6 +84,8 @@ module.exports = function(config){
       index.remove(ids[name],prev)
       index.set(ids[name],value)
     })
+
+    value = config.postSet(value,primary.size())
 
     if(!silent) emit('set',value,id,prev,value,'primary')
 
@@ -192,6 +197,9 @@ module.exports = function(config){
   }
   function search(query,insensitive,name,id){
     return getIndex(name).search(query,insensitive,id)
+  }
+  function size(name,id){
+    return getIndex(name).size(id)
   }
 
   return lodash.assign(emitter,{

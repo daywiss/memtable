@@ -63,6 +63,9 @@ module.exports = function(name='primary',index='id',required=true,delim='-'){
   function entries(){
     return kv.entries()
   }
+  function size(){
+    return kv.size()
+  }
   function ld(id,kv){
     if(kv) return utils.lodash([...entries()])
     return utils.lodash([...values()])
@@ -84,7 +87,7 @@ module.exports = function(name='primary',index='id',required=true,delim='-'){
     return utils.each(entries(),each)
   }
   return {
-    set,get,getOne,getArray,getSet,has,remove,validate,
+    set,get,getOne,getArray,getSet,has,remove,validate,size,
     values, keys,entries,lodash:ld,highland:hl,map,filter,reduce,
   }
 }

@@ -102,6 +102,11 @@ test('unique table',t=>{
     t.ok( table.lodash())
     t.end()
   })
+  t.test('size',t=>{
+    const table = Unique()
+    t.equal(table.size(),0)
+    t.end()
+  })
 })
 
 
