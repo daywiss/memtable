@@ -16,11 +16,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bluebird": "^3.4.7",
-    "highland": "^2.10.1",
-    "lodash": "^4.17.3"
+    "highland": "^2.13.0",
+    "lodash": "^4.17.10"
   },
   "devDependencies": {
-    "tape": "^4.6.3"
+    "tape": "^4.9.1"
   }
 }
