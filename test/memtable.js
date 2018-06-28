@@ -109,7 +109,10 @@ test('memtable',t=>{
   t.test('emitter',t=>{
     table.on('change',x=>x)
     t.end()
-
+  })
+  t.test('size',t=>{
+    t.ok(table.size())
+    t.end()
   })
 })
 

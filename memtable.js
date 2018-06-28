@@ -210,6 +210,6 @@ module.exports = function(config){
     addIndex,removeIndex,initIndex,
     values,keys,entries,
     lodash:ld,highland:hl,
-    map,filter,reduce,
+    map,filter,reduce,size
   })
 }
