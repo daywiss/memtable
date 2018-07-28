@@ -14,7 +14,7 @@ module.exports = function(config){
       primary:{index:'id',required:true,unique:true},
       indexes:[ ],
       preSet:x=>x,
-      postSet:x=>x,
+      postGet:x=>x,
     })
   }
   config = defaultConfig(config)
@@ -128,7 +128,7 @@ module.exports = function(config){
     return ids.map(id=>{
       const val = table.get(id)
       if(val == null) return fallback
-      return val
+      return config.postGet(val,name,table)
     })
   }
 
@@ -207,7 +207,7 @@ module.exports = function(config){
     set, setAll,update, updateBy,
     has, hasBy, hasAllBy,
     remove, removeAll,
-    addIndex,removeIndex,initIndex,
+    addIndex,removeIndex,initIndex,getIndex
     values,keys,entries,
     lodash:ld,highland:hl,
     map,filter,reduce,size
