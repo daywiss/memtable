@@ -14,6 +14,7 @@ module.exports = function(config){
       primary:{index:'id',required:true,unique:true},
       indexes:[ ],
       preSet:x=>x,
+      postSet:x=>x,
       postGet:x=>x,
     })
   }
@@ -147,25 +148,35 @@ module.exports = function(config){
     return ids.map(table.has)
   }
 
-  function remove(id){
-    const result = removeAll([id])
+  function removeBy(name='primary',id){
+    const result = removeAllBy(name,[id])
     return result[0]
   }
 
-  function removeAll(ids=[],silent){
+  function removeAllBy(name='primary',ids=[],silent){
     ids = lodash.castArray(ids)
-    const table = getIndex()
+    let table = getIndex(name)
     const result = []
     ids.forEach(id=>{
-      const prev = table.remove(id)
-      result.push(prev)
+      const prev = table.get(id)
+      const [primaryid] = primary.validate(prev,prev)
+      primary.remove(primaryid)
       indexes.forEach(index=>{
-        index.remove(id,prev)
+        const [indexid] = index.validate(prev,prev)
+        index.remove(indexid,prev)
       })
       if(!silent) emit('remove',null,id,prev,null,'primary')
+      result.push(prev)
     })
-
     return result
+  }
+
+  function remove(id){
+    return removeBy('primary',id)
+  }
+
+  function removeAll(ids=[],silent){
+    return removeAllBy('primary',ids,silent)
   }
 
   function values(name,id){
@@ -207,7 +218,8 @@ module.exports = function(config){
     set, setAll,update, updateBy,
     has, hasBy, hasAllBy,
     remove, removeAll,
-    addIndex,removeIndex,initIndex,getIndex
+    removeBy, removeAllBy,
+    addIndex,removeIndex,initIndex,getIndex,
     values,keys,entries,
     lodash:ld,highland:hl,
     map,filter,reduce,size

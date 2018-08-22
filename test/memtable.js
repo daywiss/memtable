@@ -103,7 +103,13 @@ test('memtable',t=>{
   t.test('remove',t=>{
     const result = table.remove(users[0].id)
     t.notOk(table.has(users[0].id))
-    t.ok(result)
+    t.deepEqual(result,users[0])
+    t.end()
+  })
+  t.test('removeBy',t=>{
+    const result = table.removeBy('email',users[1].email)
+    t.notOk(table.getBy('email',users[1].id))
+    t.deepEqual(result,users[1])
     t.end()
   })
   t.test('emitter',t=>{
