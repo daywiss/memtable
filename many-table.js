@@ -53,7 +53,11 @@ module.exports = function(name,index,required=true,delim='-'){
   function remove(id,value){
     if(id == null) return 
     if(!kv.has(id)) return
-    kv.get(id).delete(value)
+    if(value !== undefined){
+      kv.get(id).delete(value)
+    }else{
+      kv.delete(id)
+    }
     return value
   }
 
@@ -100,6 +104,7 @@ module.exports = function(name,index,required=true,delim='-'){
   return {
     validate,set,get,getIterator,getSet,getOne,remove,has,size,
     values, keys,entries,lodash:ld,highland:hl,map,filter,reduce,
+    type:'many',
   }
 }
 

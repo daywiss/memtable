@@ -149,34 +149,52 @@ module.exports = function(config){
   }
 
   function removeBy(name='primary',id){
+    assert(id,'data id required')
     const result = removeAllBy(name,[id])
     return result[0]
   }
 
+  //tortured logic, but this allows us to 
+  //remove both unique/non unique secondary indexes
+  //with a common interface
   function removeAllBy(name='primary',ids=[],silent){
     ids = lodash.castArray(ids)
-    let table = getIndex(name)
+    const table = getIndex(name)
     const result = []
     ids.forEach(id=>{
       const prev = table.get(id)
-      const [primaryid] = primary.validate(prev,prev)
-      primary.remove(primaryid)
-      indexes.forEach(index=>{
-        const [indexid] = index.validate(prev,prev)
-        index.remove(indexid,prev)
-      })
-      if(!silent) emit('remove',null,id,prev,null,'primary')
-      result.push(prev)
+      if(table.type == 'many'){
+        const removed = []
+        for(const val of prev){
+          removed.push(remove(val,silent))
+        }
+        result.push(removed)
+      }else{
+        result.push(remove(prev,silent))
+      }
     })
     return result
   }
 
-  function remove(id){
-    return removeBy('primary',id)
+  function remove(id,silent){
+    const result = removeAll([id],silent)
+    return result[0]
   }
 
   function removeAll(ids=[],silent){
-    return removeAllBy('primary',ids,silent)
+    ids = lodash.castArray(ids)
+    const table = getIndex()
+    const result = []
+    ids.forEach(id=>{
+      const prev = table.remove(id)
+      result.push(prev)
+      indexes.forEach(index=>{
+        index.remove(id,prev)
+      })
+      if(!silent) emit('remove',null,id,prev,null,'primary')
+    })
+
+    return result
   }
 
   function values(name,id){

@@ -89,5 +89,6 @@ module.exports = function(name='primary',index='id',required=true,delim='-'){
   return {
     set,get,getOne,getArray,getSet,has,remove,validate,size,
     values, keys,entries,lodash:ld,highland:hl,map,filter,reduce,
+    type:'unique',
   }
 }
