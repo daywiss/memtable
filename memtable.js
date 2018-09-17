@@ -8,9 +8,7 @@ var ManyTable = require('./many-table')
 var ID = require('./id')
 
 module.exports = function(config={},cb=x=>x){
-
   assert(lodash.isFunction(cb),'Callback must be a function')
-
   function defaultConfig(props){
     return lodash.defaultsDeep(props,{
       primary:{index:'id',required:true,unique:true},
