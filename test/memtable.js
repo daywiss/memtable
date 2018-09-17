@@ -22,6 +22,7 @@ test('memtable',t=>{
         {name:'role',index:'role',required:false,unique:false},
         {name:'age',index:'age',required:false,unique:false},
         {name:'fullname',index:['first','last'],required:false,unique:false},
+        {name:'safeEmail',index:x=>{x.email.toUpperCase(); return x},required:false,unique:false},
       ],
       searchable:['email','username','first','last']
     })

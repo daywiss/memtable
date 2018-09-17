@@ -1,50 +1,73 @@
 # MemTable
-Basic operations on a database table, but in memory, all syncronous calls. 
-Only retains data from objects required for table operations to minimize memory footprint, 
-such as unique indexes and filterable fields. Use in conjunction with a permanent data store. 
+A data cache with similar operations to a database but in memory with syncronous calls. 
+Adds unique/non-unique data indexing and data querying using standard lodash (syncronous)
+and highland (asyncronous streams) on top of standard JS iterators. Use in conjunction
+with permament data store by watching for data mutations on change handler.
 
 # Install
 `npm install memtable`
 
 # Why
-Allows you to cache data in a way to be essentially database agnostic and still have useful queries
-all done in memory.  As long as you are not dealing with big data, memory is a perfectly fine store for
-millions of entries. Your backend store just needs to supply the ability to upsert on change event, and 
-restore table on start.
+Cache your data with powerful indexing and querying capabilities built on JS iterators, [lodash](https://lodash.com) and
+node streams using [highland-js](https://highlandjs.org). Query data with very little overhead. Memtable supports unique and non unique 
+indexes, secondary and compound indexes.  entries. Data is kept internally in native Set and Map structures. 
+Listen to memtable changes to syncronize data back to a persistent data store. 
 
-# Usage
+# v2.0
+Version 2 brings non-unique and required indexes, functional indexes, named indexes and more robust index queries. You
+now must specify the name of the index, and can provide objects, arrays, functions or strings to query your indexed data.
+This version uses ES6 iterators and stores data in native Sets and Maps. Event emitter depedency has been
+removed for a single top level callback to watch for changes on the table. Cache warming is done by passing data
+through to setSilent to prevent events from triggering rather than passing the data set in on construction. There is also now
+a pre-save hook to allow for mutations or data validations before saving data.
+
+# Basic Usage
+
 ```js
-  var Table = require('memtable')
+  const Table = require('memtable')
+  const {validateUser} = require('./myuserschema')
 
   //all options optional
-  var users = Table({
-    primary:'id', //primary index, defaults to id, must be unique
-    secondary:['login','email'], //unique secondary ids
-    searchable:['name','email','login'], //non unique properties which can be searched
-    save:[] //specify any data you want saved in memory
-    saveAll:false, //save all props in memory, for known small data objects
-    resume:[], //an array of data to initialize table with
-    onChange:function(x){ return x}, //a function which gets called when any data gets set
-    onRemove:function(x){ return x}, //a function which gets called when any data gets removed
+  const usersTable = Table({
+    //primary index, defaults to id, must be unique
+    primary:{index:'id',required:true,unique:true}, 
+    //See index section for more information on defining secondary indexes
+    indexes:[{ 
+      //this will throw errors if uniqueness property required constraints are violated before saving
+      {name:'login',required:true,unique:true,index:'login'},
+      {name:'email',required:false,unique:true,index:'email'},
+      {name:'name',required:false,unique:false,index:'name'},
+    }],
+    //Pre save hook, allows for mutations, side effects or validations
+    preSet:x=>{
+      //validate data
+      validateUser(x)
+      //clone our data so it does not get modified outside table
+      x = lodash.clone(x)
+      //always make sure we have an updated timestamp before saving
+      x.updated = Date.now()
+      return x
+    }
   })
 
   //sets user data in table 
-  var user = users.set({
+  let user =users.set({
     id:'id0',
-    name:'name0',
-    email:'email0',
-    login:'login0',
-    created:Date.now(), //this property will be stripped out, make sure its persisted somewhere else
+    name:'david',
+    email:'david@example.com ',
+    login:'david',
   })
 
   //returns user, but a version of the user missing unnecessary props
-  var user = users.get('id0')
+  user = users.get('id0')
 
   //query table by "login" property and return a single result
-  user = users.getBy('login','login0')
+  user = users.getBy('login','david')
+  //query table by "email" property and return a single result
+  user = users.getBy('email','david@example.com')
 
-  //returns an array of users which partially matches any "filterable" properties
-  var result = users.filter('0')
+  //returns all users in an iterator
+  const allUsers = users.values()
 
   //returns true, since primary id exists in table
   var exists = users.has('id0')
@@ -52,34 +75,74 @@ restore table on start.
 ``` 
 
 # Restore and Persist data
+Basic example of how to "warm" the  memtable cache from database, then watch
+for changes on memtable to send changes back to database.
 
 ```js
+
    //assume we have a user model that uses promises to persist data to database
-   var UserModel = require('./UserModel')
+   var UserDb = require('./PersistentUserModel')
+   var Table = require('memtable')
 
    //keep store eventually consistent with memory model
    //for better consistency, persist data asyncronously, then update memtable on success.
-   function handleChange(data){
-     //upserts data into persistence model
-     UserModel.upsert(data)
+   function handleChange({type,value,prev,update,indexes}){
+     switch(type){
+       case 'set':
+         return UserDb.set(value)
+       case 'update':
+         return UserDb.update(update)
+       case 'remove':
+         return UserDb.remove(value)
+     }
    }
 
-   //assume we can get the entire table as an array this way
-   UserModel.getAll().then(function(users){
-     var Users = Table({
-       //resume previously persisted users
-       resume:users,
-       //set memtable to only retain 'id' field (default primary key) and secondary 'email' field
-       secondary:['email'],
-       //the table will call this every time memory is changed, it will ignore any return value.
-       onChange:handleChange
-     })
+   //pass change handler on init, or call listen(cb) 
+   const userCache = Table({
+     indexes:{name:'email',index:'email'}
+   },handleChange)
 
-     //...do stuff with Users table
+   //this is equivalent to change handler on init, 
+   //only one listener will every be registered though
+   userCache.listen(handleChange)
+
+   //initialize memtable cache from persistent storage
+   //set silent will prevent change handler from firing during init
+   UserDb.readStream().on('data',userCache.setSilent).on('end',()=>{
+     //cache is ready to go, changes will be propogated back to the db
+     userCache.values ...
    })
-   
 
 ``` 
+
+# Advanced Indexes
+Memtable is pretty flexible with data indexes, this is how to use some of the more advanced features.
+
+``` js
+  //lets define some advanced secondary indexes for a user
+  const indexes = [
+    //compound index
+    {
+      name:'fullname',
+      index:['first','last'],
+      required:false,unique:false
+      
+    },
+    //uses a function to both validate email address and form it to some
+    //standard representation
+    { 
+      name:'saf',
+      index: email => validateAndSanitizeEmail(email),
+      required:true, unique:true,
+    }
+  ]
+
+``` 
+
+
+# Querying
+
+
 
 # API
 

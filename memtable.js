@@ -1,28 +1,28 @@
 var lodash = require('lodash')
 var assert = require('assert')
 var highland = require('highland')
-var Emitter = require('events')
 
 var UniqueTable = require('./unique-table')
 var ManyTable = require('./many-table')
 // var Indexer = require('./indexer')
 var ID = require('./id')
 
-module.exports = function(config){
+module.exports = function(config={},cb=x=>x){
+
+  assert(lodash.isFunction(cb),'Callback must be a function')
+
   function defaultConfig(props){
     return lodash.defaultsDeep(props,{
       primary:{index:'id',required:true,unique:true},
       indexes:[ ],
       preSet:x=>x,
-      postSet:x=>x,
-      postGet:x=>x,
     })
   }
+
   config = defaultConfig(config)
 
   const indexes = new Map()
   const primary = UniqueTable('primary',config.primary.index,true)
-  const emitter = new Emitter()
 
   lodash.each(config.indexes,(opts,name)=>{
     addIndex(opts.name,opts.index,opts.required,opts.unique,opts.delimiter)
@@ -30,8 +30,13 @@ module.exports = function(config){
 
   config = defaultConfig(config)
 
-  function emit(type,value,id,prev,update,index){
-    emitter.emit('change',{ type,value,prev,update,index })
+  function emit(type,value,id,prev,update,indexes){
+    try{
+      cb({ type,value,prev,update,indexes })
+    }catch(e){
+      e.message = `Memtable change notification callback failed with Error: ${e.message}`
+      throw e
+    }
   }
 
   function getIndex(name='primary'){
@@ -54,6 +59,11 @@ module.exports = function(config){
     })
   }
 
+  function listen(listener){
+    assert(lodash.isFunction(listener),'Callback must be a function')
+    cb = listener
+  }
+
   function removeIndex(name){
     indexes.delete(name)
   }
@@ -65,6 +75,10 @@ module.exports = function(config){
 
   function values(){
     valuesBy('primary')
+  }
+
+  function setSilent(value){
+    return set(value,true)
   }
 
   function set(value,silent=false){
@@ -81,14 +95,13 @@ module.exports = function(config){
     })
 
     primary.set(id,value)
+    
     indexes.forEach((index,name)=>{
       index.remove(ids[name],prev)
       index.set(ids[name],value)
     })
 
-    value = config.postSet(value,primary.size())
-
-    if(!silent) emit('set',value,id,prev,value,'primary')
+    if(!silent) emit('set',value,id,prev,value,ids)
 
     return value
   }
@@ -231,9 +244,10 @@ module.exports = function(config){
     return getIndex(name).size(id)
   }
 
-  return lodash.assign(emitter,{
+  return {
     get,getAll,getBy, getAllBy,
     set, setAll,update, updateBy,
+    setSilent, listen,
     has, hasBy, hasAllBy,
     remove, removeAll,
     removeBy, removeAllBy,
@@ -241,5 +255,5 @@ module.exports = function(config){
     values,keys,entries,
     lodash:ld,highland:hl,
     map,filter,reduce,size
-  })
+  }
 }
