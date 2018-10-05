@@ -14,7 +14,8 @@ module.exports = function(getId){
     entries:kv.entries.bind(kv),
     clear:kv.clear.bind(kv),
     forEach:kv.forEach.bind(kv),
-    size:()=>kv.size
+    size:()=>kv.size,
+    kv:()=>kv
   }
 
 }

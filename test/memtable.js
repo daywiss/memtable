@@ -1,6 +1,7 @@
 var test = require('tape')
 var Table = require('../memtable')
 var lodash = require('lodash')
+const Events = require('events')
 
 let table = null
 const users = lodash.times(5,i=>{
@@ -120,12 +121,31 @@ test('memtable',t=>{
     t.end()
   })
   t.test('emitter',t=>{
-    table.on('change',x=>x)
-    t.end()
+    t.plan(1)
+    const events = new Events()
+    table.listen(events.emit.bind(events,'change'))
+    events.once('change',x=>{
+      t.ok(x)
+    })
+    table.set({id:'test',email:'test',username:'test'})
   })
   t.test('size',t=>{
     t.ok(table.size())
     t.end()
+  })
+  t.test('secondary non unique',t=>{
+    const table = Table({
+      indexes:[{name:'userid',index:'userid',required:true,unique:false}]
+    })
+
+    table.set({id:'a',userid:'test'})
+    table.set({id:'b',userid:'test'})
+    table.set({id:'c',userid:'c'})
+
+    const result = table.getBy('userid','test')
+    t.equal([...result].length,2)
+    t.end()
+
   })
 })
 

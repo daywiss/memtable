@@ -1,4 +1,5 @@
 # MemTable
+Light weight in memory database with powerful indexing and querying with lodash and highland node compatible streams.
 A data cache with similar operations to a database but in memory with syncronous calls. 
 Adds unique/non-unique data indexing and data querying using standard lodash (syncronous)
 and highland (asyncronous streams) on top of standard JS iterators. Use in conjunction
@@ -6,6 +7,7 @@ with permament data store by watching for data mutations on change handler.
 
 # Install
 `npm install memtable`
+`const Memtable = require('memtable')`
 
 # Why
 Cache your data with powerful indexing and querying capabilities built on JS iterators, [lodash](https://lodash.com) and

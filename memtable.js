@@ -4,7 +4,7 @@ var highland = require('highland')
 
 var UniqueTable = require('./unique-table')
 var ManyTable = require('./many-table')
-// var Indexer = require('./indexer')
+
 var ID = require('./id')
 
 module.exports = function(config={},cb=x=>x){
@@ -95,7 +95,9 @@ module.exports = function(config={},cb=x=>x){
     primary.set(id,value)
     
     indexes.forEach((index,name)=>{
-      index.remove(ids[name],prev)
+      //remove old data, set new data. check that old data
+      //is undefined otherwise entire set might be deleted
+      if(prev !== undefined) index.remove(ids[name],prev)
       index.set(ids[name],value)
     })
 
@@ -140,7 +142,7 @@ module.exports = function(config={},cb=x=>x){
     return ids.map(id=>{
       const val = table.get(id)
       if(val == null) return fallback
-      return config.postGet(val,name,table)
+      return val
     })
   }
 
