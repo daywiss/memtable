@@ -151,22 +151,20 @@ Memtable is pretty flexible with data indexes, this is how to use some of the mo
 ## Initialization Options
 ```js
 var Table = require('memtable')
-table = Table(options)
+table = Table(options,callback)
 ``` 
 ```js
   //default option values
   options = {
     primary:'id' //default primary key property, objects must at least have this property defined
-    secondary:[], //list secondary indexable properties as strings, must be unique
-    searchable:[], //properties which can be partially searched
-    required:[], //list of required properties. will throw error if object is set without one.
-    resume:[], //array of table objects to resume from
-    save:[], //properties on object to always store in memory, but not to index or filter on
-    saveAll:false, //save entire object in memory rather than just primary/unique/filterable props. Only do if you know objects are small. 
-    onChange:function(x, primaryid){ return x}, //this function will get called after memory is set
-    onRemove:function(x, primaryid){ return x}, //this function will get called after memory is deleted
+    indexes:[], //list secondary indexable properties as strings, must be unique
   }
+
+  callback({
+    type,value,prev,update,indexes
+  })
 ``` 
+
 ## Set
 Save object to table, or replace existing object. Will trigger onChange callback. Will throw if required properties are not set. Will
 also throw if unique secondary id collides with another item already in table. 
