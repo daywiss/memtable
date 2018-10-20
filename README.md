@@ -133,7 +133,7 @@ Memtable is pretty flexible with data indexes, this is how to use some of the mo
     //uses a function to both validate email address and form it to some
     //standard representation
     { 
-      name:'saf',
+      name:'email',
       index: email => validateAndSanitizeEmail(email),
       required:true, unique:true,
     }
@@ -206,10 +206,10 @@ Get an object from table. Will throw if object does not exist.
 
   //get object by composite id. Must specify composite id as an array of values
   //Must specify the values to search as an array in the same order as the ids
-  var result = table.getBy(['prop1','prop2'],['compositevalue1','compositevalue2'])
+  var result = table.getBy('compositeindexname',['compositevalue1','compositevalue2'])
 
   //get a list of objects by composit ids. specify array of composite values.
-  var result = table.getAllBy(['prop1','prop2'],[['compositevalue1','compositevalue2']])
+  var result = table.getAllBy('compositeindexname',[['compositevalue1','compositevalue2']])
 
 ```
 
@@ -234,10 +234,10 @@ Check if an object exists in the table. Will never throw. returns only true or f
   var result = table.hasAllBy('uniquepropname',listofuniqueids)
 
   //check if object exists by composite id
-  var result = table.hasBy(['prop1','prop2'],['objectprop1','objectprop2'])
+  var result = table.hasBy('compositeindexname',['objectprop1','objectprop2'])
 
   //check if a list of objects exist by composite ids
-  var result = table.hasAllBy(['prop1','prop2'],[['objectprop1','objectprop2']])
+  var result = table.hasAllBy('compositeindexname',[['objectprop1','objectprop2']])
 ```
 
 ## Remove
@@ -257,10 +257,10 @@ Remove an object from memory and trigger onRemove callback. Throws if object doe
   var result = table.removeAllBy(property,secondaryids)
 
   //remove object by composite id. Must specify composite id as an array of values
-  var result = table.removeBy(['prop1','prop2'],['compositevalue1','compositevalue2'])
+  var result = table.removeBy('compositeindexname',['compositevalue1','compositevalue2'])
 
   //remove objects by composite ids. specify array of array of composite values.
-  var result = table.removeAllBy(['prop1','prop2'],[['compositevalue1','compositevalue2']])
+  var result = table.removeAllBy('compositeindexname',[['compositevalue1','compositevalue2']])
 ```
 
 ## Map, Filter, Reduce, Each, Sort
