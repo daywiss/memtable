@@ -88,16 +88,18 @@ module.exports = function(config={},cb=x=>x){
 
     const ids = {}
     indexes.forEach((index,name)=>{
-      const [id] = index.validate(value,prev)
-      ids[name] = id
+      const result = index.validate(value,prev)
+      ids[name] = result[0]
     })
 
     primary.set(id,value)
-    
     indexes.forEach((index,name)=>{
       //remove old data, set new data. check that old data
       //is undefined otherwise entire set might be deleted
-      if(prev !== undefined) index.remove(ids[name],prev)
+      if(prev !== undefined){
+        const [secondaryId] = index.validate(prev,null,true)
+        index.remove(secondaryId,prev)
+      }
       index.set(ids[name],value)
     })
 

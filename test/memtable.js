@@ -147,5 +147,15 @@ test('memtable',t=>{
     t.end()
 
   })
+  t.test('secondary bool indext',t=>{
+    const table = Table({
+      indexes:[{name:'done',index:'done',required:true,unique:false}],
+    })
+    table.set({id:'a',done:false})
+    table.set({id:'a',done:true})
+    let [a] = [...table.getBy('done',true)]
+    t.ok(a.done)
+    t.end()
+  })
 })
 
