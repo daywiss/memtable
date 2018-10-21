@@ -152,9 +152,20 @@ test('memtable',t=>{
       indexes:[{name:'done',index:'done',required:true,unique:false}],
     })
     table.set({id:'a',done:false})
+    let [a] = [...table.getBy('done',false)]
     table.set({id:'a',done:true})
-    let [a] = [...table.getBy('done',true)]
-    t.ok(a.done)
+    let [b] = [...table.getBy('done',true)]
+    t.ok(b.done)
+    t.end()
+  })
+  t.test('post get',t=>{
+    const table = Table({
+      indexes:[{name:'done',index:'done',required:true,unique:false}],
+      postGet:lodash.cloneDeep,
+    })
+    const result = table.set({id:'a',done:false})
+    result.done = true
+    t.deepEqual(table.get('a').done,false)
     t.end()
   })
 })

@@ -14,6 +14,7 @@ module.exports = function(config={},cb=x=>x){
       primary:{index:'id',required:true,unique:true},
       indexes:[ ],
       preSet:x=>x,
+      postGet:x=>x,
     })
   }
 
@@ -105,7 +106,7 @@ module.exports = function(config={},cb=x=>x){
 
     if(!silent) emit('set',value,id,prev,value,ids)
 
-    return value
+    return config.postGet(value)
   }
 
   function setAll(values=[]){
@@ -144,7 +145,7 @@ module.exports = function(config={},cb=x=>x){
     return ids.map(id=>{
       const val = table.get(id)
       if(val == null) return fallback
-      return val
+      return config.postGet(val)
     })
   }
 
