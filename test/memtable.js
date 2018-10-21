@@ -165,7 +165,8 @@ test('memtable',t=>{
     })
     const result = table.set({id:'a',done:false})
     result.done = true
-    t.deepEqual(table.get('a').done,false)
+    const res = table.getBy('done',false)
+    t.equal(res[0].done,false)
     t.end()
   })
 })

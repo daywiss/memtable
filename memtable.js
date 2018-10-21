@@ -105,7 +105,6 @@ module.exports = function(config={},cb=x=>x){
     })
 
     if(!silent) emit('set',value,id,prev,value,ids)
-
     return config.postGet(value)
   }
 
@@ -145,7 +144,16 @@ module.exports = function(config={},cb=x=>x){
     return ids.map(id=>{
       const val = table.get(id)
       if(val == null) return fallback
-      return config.postGet(val)
+
+      if(table.type == 'many'){
+        const result = []
+        for(const  data of val){
+          result.push(config.postGet(data))
+        }
+        return result
+      }else{
+        return config.postGet(val)
+      }
     })
   }
 
