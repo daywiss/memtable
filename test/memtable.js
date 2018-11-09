@@ -158,6 +158,21 @@ test('memtable',t=>{
     t.ok(b.done)
     t.end()
   })
+  t.test('secondary bool indext',t=>{
+    const table = Table({
+      indexes:[{name:'done',index:'done',required:true,unique:false}],
+    })
+    table.set({id:'a',done:false})
+    let [a] = [...table.getBy('done',false)]
+    table.set({id:'a',done:true})
+    let [b] = [...table.getBy('done',true)]
+    a = table.get('a')
+    t.ok(b.done)
+    t.ok(a.done)
+    table.remove('a')
+    t.notOk([...table.getBy('done',true).entries()].length)
+    t.end()
+  })
   t.test('post get',t=>{
     const table = Table({
       indexes:[{name:'done',index:'done',required:true,unique:false}],

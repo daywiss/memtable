@@ -98,6 +98,9 @@ test('many table',t=>{
     t.notOk(table.get(value.id).next.value)
     t.end()
   })
+  // t.test('remove2',t=>{
+  //   const table = Table('secondary','done')
+  // })
 
   t.test('compound',t=>{
     const table = Table('secondary',['first','last'])

@@ -213,7 +213,10 @@ module.exports = function(config={},cb=x=>x){
       const prev = table.remove(id)
       result.push(prev)
       indexes.forEach(index=>{
-        index.remove(id,prev)
+        if(prev !== undefined){
+          const [secondaryId] = index.validate(prev,null,true)
+          index.remove(secondaryId,prev)
+        }
       })
       if(!silent) emit('remove',null,id,prev,null,'primary')
     })
