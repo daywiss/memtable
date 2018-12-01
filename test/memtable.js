@@ -4,7 +4,7 @@ var lodash = require('lodash')
 const Events = require('events')
 
 let table = null
-const users = lodash.times(5,i=>{
+let users = lodash.times(5,i=>{
   return {
     id:i,
     username:'user ' + i, 
@@ -95,6 +95,7 @@ test('memtable',t=>{
     result.forEach(r=>{
       t.ok(r.age)
     })
+    users = result
     t.end()
   })
   t.test('get by age',t=>{
@@ -158,7 +159,7 @@ test('memtable',t=>{
     t.ok(b.done)
     t.end()
   })
-  t.test('secondary bool indext',t=>{
+  t.test('remove secondary',t=>{
     const table = Table({
       indexes:[{name:'done',index:'done',required:true,unique:false}],
     })
@@ -170,7 +171,9 @@ test('memtable',t=>{
     t.ok(b.done)
     t.ok(a.done)
     table.remove('a')
-    t.notOk([...table.getBy('done',true).entries()].length)
+    let [c] = [...table.getBy('done',true)]
+    console.log('getby',c)
+    t.notOk(c)
     t.end()
   })
   t.test('post get',t=>{
@@ -182,6 +185,19 @@ test('memtable',t=>{
     result.done = true
     const res = table.getBy('done',false)
     t.equal(res[0].done,false)
+    t.end()
+  })
+  t.test('update with secondar',t=>{
+    const table = Table({
+      indexes:[{name:'location',index:'location',required:true,unique:false}],
+    })
+    table.set({
+      id:'test',
+      location:'Local'
+    })
+    table.update('test',{location:'Remote'})
+    const result = table.getBy('location','Local')
+    t.notOk(result.length)
     t.end()
   })
 })

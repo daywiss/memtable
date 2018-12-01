@@ -113,14 +113,14 @@ module.exports = function(config={},cb=x=>x){
     return values.map(set)
   }
 
-  function update(id,value){
+  function update(id,value={}){
     return updateBy('primary',id,value)
   }
 
-  function updateBy(name='primary',id,value,silent){
+  function updateBy(name='primary',id,value={},silent){
     const index = getIndex(name)
     const prev = index.getOne(id)
-    const result = set(lodash.merge(prev,value),true)
+    const result = set({...prev,...value},true)
     if(!silent) emit('update',result,id,prev,value,name)
     return result
   }
@@ -144,7 +144,6 @@ module.exports = function(config={},cb=x=>x){
     return ids.map(id=>{
       const val = table.get(id)
       if(val == null) return fallback
-
       if(table.type == 'many'){
         const result = []
         for(const  data of val){
