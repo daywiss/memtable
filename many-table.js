@@ -93,7 +93,7 @@ module.exports = function(name,index,required=true,delim='-'){
     return utils.map(entries(id),map)
   }
   function filter(filter,id){
-    return utils.filter(entries(id),map)
+    return utils.filter(entries(id),filter)
   }
   function reduce(reduce,init,id){
     return utils.reduce(entries(id),reduce,init)

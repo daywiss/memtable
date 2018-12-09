@@ -200,5 +200,21 @@ test('memtable',t=>{
     t.notOk(result.length)
     t.end()
   })
+  t.test('filter',t=>{
+    const table = Table({})
+    table.set({
+      id:'test',
+      name:'test',
+    })
+    table.set({
+      id:'a',
+      name:'a',
+    })
+    const result = table.filter(x=>{
+      return x.id == 'test'
+    })
+    t.ok(result.length == 1)
+    t.end()
+  })
 })
 

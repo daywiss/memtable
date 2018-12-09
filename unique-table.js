@@ -78,7 +78,7 @@ module.exports = function(name='primary',index='id',required=true,delim='-'){
     return utils.map(entries(),map)
   }
   function filter(filter){
-    return utils.filter(entries(),map)
+    return utils.filter(entries(),filter)
   }
   function reduce(reduce,init){
     return utils.reduce(entries(),reduce,init)
